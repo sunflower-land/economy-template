@@ -8,7 +8,12 @@ import { useAppTranslation } from "lib/i18n/useAppTranslations";
 import { decodePortalToken } from "./decodePortalToken";
 import { getJwt, getMinigamesApiUrl } from "./url";
 import { getPlayerEconomySession, postPlayerEconomyAction } from "./api";
-import type { BootstrapContext, MinigameSessionResponse } from "./types";
+import {
+  buildEconomyMetaFromSession,
+  type BootstrapContext,
+  type MinigameSessionEconomyMeta,
+  type MinigameSessionResponse,
+} from "./types";
 import {
   emptySessionMinigame,
   normalizeMinigameFromApi,
@@ -20,6 +25,8 @@ export type PortalBootstrapConfig = {
   offlineActions: Record<string, unknown>;
   bootstrapAction?: string;
   offlineMinigame?: () => MinigameSessionResponse["playerEconomy"];
+  /** With offline mode, supplies `items` / `descriptions` for the ui-resources dashboard. */
+  offlineEconomyMeta?: MinigameSessionEconomyMeta;
 };
 
 async function tryBootstrapAction(
@@ -102,7 +109,13 @@ const MinigamePortalBootstrapOverlay: React.FC<{
  */
 export const MinigamePortalProvider: React.FC<
   PortalBootstrapConfig & { children: React.ReactNode }
-> = ({ children, offlineActions, bootstrapAction, offlineMinigame }) => {
+> = ({
+  children,
+  offlineActions,
+  bootstrapAction,
+  offlineMinigame,
+  offlineEconomyMeta,
+}) => {
   const [phase, setPhase] = useState<Phase>("loading");
   const [bootstrap, setBootstrap] = useState<BootstrapContext | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -112,8 +125,14 @@ export const MinigamePortalProvider: React.FC<
     offlineActions,
     bootstrapAction,
     offlineMinigame,
+    offlineEconomyMeta,
   });
-  configRef.current = { offlineActions, bootstrapAction, offlineMinigame };
+  configRef.current = {
+    offlineActions,
+    bootstrapAction,
+    offlineMinigame,
+    offlineEconomyMeta,
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -146,6 +165,7 @@ export const MinigamePortalProvider: React.FC<
             playerEconomy:
               cfg.offlineMinigame?.() ?? emptySessionMinigame(),
             actions: cfg.offlineActions,
+            economyMeta: cfg.offlineEconomyMeta,
           };
           if (!cancelled) {
             setBootstrap(ctx);
@@ -179,6 +199,7 @@ export const MinigamePortalProvider: React.FC<
           farm: session.farm,
           playerEconomy,
           actions: session.actions,
+          economyMeta: buildEconomyMetaFromSession(session),
         };
         if (!cancelled) {
           setBootstrap(ctx);

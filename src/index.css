@@ -13,3 +13,20 @@ body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     Roboto, sans-serif;
 }
+
+/**
+ * Player-economy dashboard / pixel UI: keep raster art sharp (matches main-game intent).
+ * Scoped class so arbitrary photos elsewhere stay default-smoothed.
+ */
+.minigame-pixel-ui img,
+.minigame-pixel-ui canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+@supports (-webkit-min-device-pixel-ratio: 0) {
+  .minigame-pixel-ui img,
+  .minigame-pixel-ui canvas {
+    image-rendering: -webkit-optimize-contrast;
+  }
+}

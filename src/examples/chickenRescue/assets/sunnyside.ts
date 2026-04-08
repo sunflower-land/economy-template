@@ -8,6 +8,12 @@ const B = () => CONFIG.PROTECTED_IMAGE_URL;
 export const SUNNYSIDE = {
   icons: {
     expression_alerted: `${B()}/icons/expression_alerted.png`,
+    expression_confused: `${B()}/icons/expression_confused.png`,
+    close: `${B()}/icons/close.png`,
+    arrow_left: `${B()}/icons/arrow_left.png`,
+    basket: `${B()}/icons/basket.png`,
+    confirm: `${B()}/icons/confirm.png`,
+    timer: `${B()}/icons/timer.png`,
     hammer: `${B()}/icons/hammer.png`,
     disc: `${B()}/icons/disc.png`,
     heart: `${B()}/icons/heart.png`,
@@ -27,5 +33,6 @@ export const SUNNYSIDE = {
   },
   ui: {
     round_button: `${B()}/ui/round_button.png`,
+    round_button_pressed: `${B()}/ui/round_button_pressed.png`,
   },
 } as const;

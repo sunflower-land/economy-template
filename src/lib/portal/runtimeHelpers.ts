@@ -5,6 +5,7 @@ import {
   type MinigameActionDefinition,
   type MinigameConfig,
   type MinigameRuntimeState,
+  type PlayerEconomyConfig,
   utcCalendarDay,
 } from "./processAction";
 
@@ -13,7 +14,7 @@ export function cloneMinigameSnapshot(
 ): MinigameSessionResponse["playerEconomy"] {
   const day = utcCalendarDay(Date.now());
   const dm = m.dailyMinted ?? { utcDay: day, minted: {} };
-  return {
+  const base: MinigameSessionResponse["playerEconomy"] = {
     balances: { ...m.balances },
     generating: Object.fromEntries(
       Object.entries(m.generating).map(([k, v]) => [k, { ...v }]),
@@ -22,6 +23,16 @@ export function cloneMinigameSnapshot(
     dailyActivity: { ...m.dailyActivity },
     dailyMinted: { utcDay: dm.utcDay, minted: { ...dm.minted } },
   };
+  if (m.dailyActionUses) {
+    base.dailyActionUses = {
+      utcDay: m.dailyActionUses.utcDay,
+      byAction: { ...m.dailyActionUses.byAction },
+    };
+  }
+  if (m.purchaseCounts != null) {
+    base.purchaseCounts = { ...m.purchaseCounts };
+  }
+  return base;
 }
 
 export function minigameSessionToRuntime(
@@ -38,13 +49,24 @@ export function minigameSessionToRuntime(
     activity: m.activity,
     dailyActivity: { ...m.dailyActivity },
     dailyMinted: { utcDay: dm.utcDay, minted: { ...dm.minted } },
+    ...(m.dailyActionUses
+      ? {
+          dailyActionUses: {
+            utcDay: m.dailyActionUses.utcDay,
+            byAction: { ...m.dailyActionUses.byAction },
+          },
+        }
+      : {}),
+    ...(m.purchaseCounts != null
+      ? { purchaseCounts: { ...m.purchaseCounts } }
+      : {}),
   };
 }
 
 export function runtimeToMinigameSession(
   r: MinigameRuntimeState,
 ): MinigameSessionResponse["playerEconomy"] {
-  return {
+  const base: MinigameSessionResponse["playerEconomy"] = {
     balances: { ...r.balances },
     generating: Object.fromEntries(
       Object.entries(r.generating).map(([k, v]) => [k, { ...v }]),
@@ -56,6 +78,16 @@ export function runtimeToMinigameSession(
       minted: { ...r.dailyMinted.minted },
     },
   };
+  if (r.dailyActionUses) {
+    base.dailyActionUses = {
+      utcDay: r.dailyActionUses.utcDay,
+      byAction: { ...r.dailyActionUses.byAction },
+    };
+  }
+  if (r.purchaseCounts != null) {
+    base.purchaseCounts = { ...r.purchaseCounts };
+  }
+  return base;
 }
 
 export function normalizeMinigameFromApi(
@@ -63,7 +95,7 @@ export function normalizeMinigameFromApi(
 ): MinigameSessionResponse["playerEconomy"] {
   const day = utcCalendarDay(Date.now());
   const dm = raw.dailyMinted ?? { utcDay: day, minted: {} };
-  return {
+  const base: MinigameSessionResponse["playerEconomy"] = {
     balances: { ...raw.balances },
     generating: Object.fromEntries(
       Object.entries(raw.generating).map(([k, v]) => [k, { ...v }]),
@@ -72,6 +104,16 @@ export function normalizeMinigameFromApi(
     dailyActivity: { ...raw.dailyActivity },
     dailyMinted: { utcDay: dm.utcDay, minted: { ...dm.minted } },
   };
+  if (raw.dailyActionUses) {
+    base.dailyActionUses = {
+      utcDay: raw.dailyActionUses.utcDay,
+      byAction: { ...raw.dailyActionUses.byAction },
+    };
+  }
+  if (raw.purchaseCounts != null) {
+    base.purchaseCounts = { ...raw.purchaseCounts };
+  }
+  return base;
 }
 
 const RUN_SESSION_BALANCE_KEYS = ["LIVE_GAME", "ADVANCED_GAME"] as const;
@@ -95,7 +137,18 @@ export function mergeMinigameEconomyFromApi(
       }
     }
   }
-  return { ...next, balances };
+  return {
+    ...next,
+    balances,
+    dailyActionUses:
+      next.dailyActionUses !== undefined
+        ? next.dailyActionUses
+        : prev.dailyActionUses,
+    purchaseCounts:
+      next.purchaseCounts !== undefined
+        ? next.purchaseCounts
+        : prev.purchaseCounts,
+  };
 }
 
 export function applyOptimisticPortalAction(
@@ -107,12 +160,14 @@ export function applyOptimisticPortalAction(
     itemId?: string;
     now?: number;
   },
+  economyItems?: PlayerEconomyConfig["items"],
 ):
   | { ok: true; playerEconomy: MinigameSessionResponse["playerEconomy"] }
   | { ok: false; error: string } {
   const now = input.now ?? Date.now();
   const config: MinigameConfig = {
     actions: actions as Record<string, MinigameActionDefinition>,
+    ...(economyItems != null ? { items: economyItems } : {}),
   };
   const runtime = minigameSessionToRuntime(minigame, now);
   const result = processPlayerEconomyAction(config, runtime, {

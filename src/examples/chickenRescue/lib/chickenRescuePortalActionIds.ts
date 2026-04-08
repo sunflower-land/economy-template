@@ -1,5 +1,13 @@
 import { CONFIG } from "lib/config";
-import type { MinigameActionDefinition } from "lib/portal/processAction";
+import type {
+  BurnRule,
+  MinigameActionDefinition,
+} from "lib/portal/processAction";
+
+function burnFixedAmount(rule: BurnRule | undefined): number | undefined {
+  if (!rule || !("amount" in rule)) return undefined;
+  return rule.amount;
+}
 
 /**
  * Resolved from `session.actions` so the portal works when the editor/API use
@@ -81,7 +89,7 @@ function matchesStartBasic(def: MinigameActionDefinition): boolean {
   return (
     isFixedAmountMint(m.LIVE_GAME) &&
     m.LIVE_GAME.amount === 1 &&
-    b["4"].amount === 1
+    burnFixedAmount(b["4"]) === 1
   );
 }
 
@@ -98,7 +106,7 @@ function matchesGameOverBasic(def: MinigameActionDefinition): boolean {
   if (!isRangedMint(m["1"]) || !b?.LIVE_GAME) {
     return false;
   }
-  return b.LIVE_GAME.amount === 1;
+  return burnFixedAmount(b.LIVE_GAME) === 1;
 }
 
 /** mint ADVANCED_GAME x1, burn `"3"` x1 */
@@ -114,7 +122,7 @@ function matchesStartAdvanced(def: MinigameActionDefinition): boolean {
   return (
     isFixedAmountMint(m.ADVANCED_GAME) &&
     m.ADVANCED_GAME.amount === 1 &&
-    b["3"].amount === 1
+    burnFixedAmount(b["3"]) === 1
   );
 }
 
@@ -128,7 +136,7 @@ function matchesGameOverAdvanced(def: MinigameActionDefinition): boolean {
   if (!m?.["2"] || !b?.ADVANCED_GAME) {
     return false;
   }
-  if (!isRangedMint(m["2"]) || b.ADVANCED_GAME.amount !== 1) {
+  if (!isRangedMint(m["2"]) || burnFixedAmount(b.ADVANCED_GAME) !== 1) {
     return false;
   }
   if (m["1"] !== undefined && !isRangedMint(m["1"])) {

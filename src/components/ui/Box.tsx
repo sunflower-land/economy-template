@@ -14,16 +14,32 @@ export const Box: React.FC<{
   showCountIfZero?: boolean;
   hideCount?: boolean;
   className?: string;
-}> = ({ image, count, showCountIfZero, hideCount, className }) => {
+  onClick?: () => void;
+  isSelected?: boolean;
+  parentDivRef?: React.RefObject<HTMLDivElement | null>;
+}> = ({
+  image,
+  count,
+  showCountIfZero,
+  hideCount,
+  className,
+  onClick,
+  isSelected,
+  parentDivRef,
+}) => {
   const showLabel =
     !hideCount &&
     count !== undefined &&
     (showCountIfZero ? count.gte(0) : count.gt(0));
 
   return (
-    <div className={classNames("relative", className)}>
+    <div ref={parentDivRef} className={classNames("relative", className)}>
       <div
-        className="relative flex items-center justify-center bg-[#6b4423]"
+        className={classNames(
+          "relative flex items-center justify-center bg-brown-600",
+          onClick && "cursor-pointer hover:brightness-95",
+          isSelected && "ring-2 ring-[#ffb01e]",
+        )}
         style={{
           width: `${PIXEL_SCALE * (INNER + 4)}px`,
           height: `${PIXEL_SCALE * (INNER + 4)}px`,
@@ -33,12 +49,26 @@ export const Box: React.FC<{
           marginRight: `${PIXEL_SCALE * 3}px`,
           ...pixelDarkBorderStyle,
         }}
+        onClick={onClick}
+        onKeyDown={
+          onClick
+            ? (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onClick();
+                }
+              }
+            : undefined
+        }
+        role={onClick ? "button" : undefined}
+        tabIndex={onClick ? 0 : undefined}
       >
         <img
           src={image}
           alt=""
           className="max-w-[85%] max-h-[85%] object-contain"
           draggable={false}
+          style={{ imageRendering: "pixelated" }}
         />
         {showLabel && (
           <div

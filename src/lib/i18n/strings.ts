@@ -31,6 +31,51 @@ export const EN_STRINGS: Record<string, string> = {
   "minigame.coinsRemaining": "worms left",
   "minigame.shopBack": "Back",
   "minigame.shopConfirm": "Confirm",
+
+  buy: "Buy",
+  ok: "OK",
+  start: "Start",
+  collect: "Collect",
+  balance: "Balance",
+  inventory: "Inventory",
+  requires: "Requires",
+  "welcome.label": "Welcome",
+  "detail.basket.empty": "Your basket is empty.",
+  dismiss: "Dismiss",
+
+  "minigame.uiResources.emptyActions":
+    "This session has no economy actions yet. Add rules in the minigame editor or use the offline stub in UiResourcesApp.",
+
+  "minigame.dashboard.shop": "Shop",
+  "minigame.dashboard.priceLabel": "Price",
+  "minigame.dashboard.shopAlreadyPurchased": "Already purchased the maximum for this item.",
+  "minigame.dashboard.actionFailed": "Action failed. Please try again.",
+  "minigame.dashboard.welcomeFallback":
+    "Use the shop and generators shown here. Your progress syncs through the Minigames API when configured.",
+
+  "minigame.dashboard.production.collectResolving": "Resolving collect…",
+  "minigame.dashboard.production.collectYouWon": "You received:",
+  "minigame.dashboard.production.collectDone": "Done",
+  "minigame.dashboard.production.openRecipesAria": "Open recipes",
+  "minigame.dashboard.production.collectFromBuildingAria": "Collect from building",
+  "minigame.dashboard.production.startRun": "Start a run at {{building}}.",
+  "minigame.dashboard.production.duration": "Duration:",
+  "minigame.dashboard.production.dropOddsTitle": "Possible drops",
+  "minigame.dashboard.production.dropOddsLine":
+    "{{percent}} chance: +{{amount}} {{name}}",
+  "minigame.dashboard.production.producesWhenComplete": "When complete you get:",
+  "minigame.dashboard.production.uses": "Uses",
+  "minigame.dashboard.production.noExtraResources": "No extra resources required.",
+  "minigame.dashboard.production.producing":
+    "Producing {{output}} at {{building}}.",
+  "minigame.dashboard.production.readyCollect": "{{building}} is ready to collect.",
+  "minigame.dashboard.production.readyIn": "Ready in {{time}}.",
+  "minigame.dashboard.production.noActive": "No active job at {{building}}.",
+  "minigame.dashboard.production.collectYour": "You will collect:",
+  "minigame.dashboard.production.nothingToCollect": "Nothing to collect.",
+  "minigame.dashboard.production.whatToProduce": "What do you want to produce?",
+  "minigame.dashboard.production.mysteryDropTitle": "Mystery drop",
+  "minigame.dashboard.production.tapToCollect": "Tap to collect",
 };
 
 function interpolate(

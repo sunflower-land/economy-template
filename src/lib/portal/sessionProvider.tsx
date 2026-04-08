@@ -7,7 +7,11 @@ import React, {
 } from "react";
 import { flushSync } from "react-dom";
 import { getMinigamesApiUrl } from "./url";
-import type { BootstrapContext, MinigameSessionResponse } from "./types";
+import type {
+  BootstrapContext,
+  MinigameSessionEconomyMeta,
+  MinigameSessionResponse,
+} from "./types";
 import { postPlayerEconomyAction } from "./api";
 import {
   applyOptimisticPortalAction,
@@ -32,6 +36,9 @@ export type CommitLocalPlayerEconomyInput = {
 export type MinigameSessionValue = {
   farmId: number;
   jwt: string;
+  portalId: string;
+  /** Session metadata for building dashboard config (`items`, `descriptions`, …). */
+  economyMeta: MinigameSessionEconomyMeta | undefined;
   farm: MinigameSessionResponse["farm"];
   playerEconomy: MinigameSessionResponse["playerEconomy"];
   actions: Record<string, unknown>;
@@ -42,6 +49,10 @@ export type MinigameSessionValue = {
   dispatchMinigameActionsSequential: (
     inputs: DispatchMinigameActionInput[],
   ) => boolean;
+  /** Apply economy from an authoritative API response without sending another POST. */
+  replacePlayerEconomy: (
+    next: MinigameSessionResponse["playerEconomy"],
+  ) => void;
   apiError: string | null;
   clearApiError: () => void;
 };
@@ -130,6 +141,7 @@ export function MinigameSessionProvider({
           amounts: input.amounts,
           itemId: input.itemId,
         },
+        bootstrap.economyMeta?.items,
       );
       if (!next.ok) {
         return false;
@@ -137,7 +149,12 @@ export function MinigameSessionProvider({
       runAfterLocalEconomyCommit(rollback, next.playerEconomy, input);
       return true;
     },
-    [bootstrap.actions, playerEconomy, runAfterLocalEconomyCommit],
+    [
+      bootstrap.actions,
+      bootstrap.economyMeta?.items,
+      playerEconomy,
+      runAfterLocalEconomyCommit,
+    ],
   );
 
   const dispatchMinigameActionsSequential = useCallback(
@@ -150,11 +167,16 @@ export function MinigameSessionProvider({
       let current = playerEconomy;
       let applied = 0;
       for (const input of inputs) {
-        const next = applyOptimisticPortalAction(bootstrap.actions, current, {
-          actionId: input.action,
-          amounts: input.amounts,
-          itemId: input.itemId,
-        });
+        const next = applyOptimisticPortalAction(
+          bootstrap.actions,
+          current,
+          {
+            actionId: input.action,
+            amounts: input.amounts,
+            itemId: input.itemId,
+          },
+          bootstrap.economyMeta?.items,
+        );
         if (!next.ok) {
           break;
         }
@@ -175,11 +197,16 @@ export function MinigameSessionProvider({
       void (async () => {
         let state = rollback;
         for (const input of inputs) {
-          const step = applyOptimisticPortalAction(bootstrap.actions, state, {
-            actionId: input.action,
-            amounts: input.amounts,
-            itemId: input.itemId,
-          });
+          const step = applyOptimisticPortalAction(
+            bootstrap.actions,
+            state,
+            {
+              actionId: input.action,
+              amounts: input.amounts,
+              itemId: input.itemId,
+            },
+            bootstrap.economyMeta?.items,
+          );
           if (!step.ok) {
             break;
           }
@@ -202,33 +229,47 @@ export function MinigameSessionProvider({
       })();
       return true;
     },
-    [bootstrap.actions, bootstrap.jwt, playerEconomy],
+    [bootstrap.actions, bootstrap.economyMeta?.items, bootstrap.jwt, playerEconomy],
   );
 
   const clearApiError = useCallback(() => setApiError(null), []);
+
+  const replacePlayerEconomy = useCallback(
+    (next: MinigameSessionResponse["playerEconomy"]) => {
+      setApiError(null);
+      setPlayerEconomy(normalizeMinigameFromApi(next));
+    },
+    [],
+  );
 
   const value = useMemo(
     (): MinigameSessionValue => ({
       farmId: bootstrap.id,
       jwt: bootstrap.jwt as string,
+      portalId: bootstrap.portalId,
+      economyMeta: bootstrap.economyMeta,
       farm: bootstrap.farm,
       playerEconomy,
       actions: bootstrap.actions,
       dispatchAction,
       commitLocalPlayerEconomySync,
       dispatchMinigameActionsSequential,
+      replacePlayerEconomy,
       apiError,
       clearApiError,
     }),
     [
       bootstrap.id,
       bootstrap.jwt,
+      bootstrap.portalId,
+      bootstrap.economyMeta,
       bootstrap.farm,
       bootstrap.actions,
       playerEconomy,
       dispatchAction,
       commitLocalPlayerEconomySync,
       dispatchMinigameActionsSequential,
+      replacePlayerEconomy,
       apiError,
       clearApiError,
     ],

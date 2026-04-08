@@ -1,7 +1,7 @@
 import React from "react";
-import { ChickenRescueApp } from "examples/chickenRescue/ChickenRescue";
+import { UiResourcesApp } from "examples/ui-resources/UiResourcesApp";
 
 /** Default template example: Chicken Rescue (portal session + Phaser). */
 export const App: React.FC = () => {
-  return <ChickenRescueApp />;
+  return <UiResourcesApp />;
 };
