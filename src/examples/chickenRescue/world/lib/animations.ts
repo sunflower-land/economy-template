@@ -1,4 +1,3 @@
-import { CONFIG } from "lib/config";
 import { getAnimationApiBase } from "lib/portal/url";
 import { BumpkinParts, tokenUriBuilder } from "lib/utils/tokenUriBuilder";
 
@@ -36,11 +35,6 @@ export const getAnimationUrl = (
   animation: keyof typeof ANIMATION,
 ) => {
   const base = getAnimationApiBase();
-  if (!base) {
-    throw new Error(
-      "No animation base URL (set VITE_ANIMATION_URL for CloudFront caching, or VITE_MINIGAMES_API_URL as fallback)",
-    );
-  }
   return `${base}/animate/0_v1_${tokenUriBuilder(bumpkinParts)}/${animation}`;
 };
 
@@ -49,10 +43,6 @@ export const getAnimatedWebpUrl = (
   bumpkinParts: BumpkinParts,
   animations: string[],
 ) => {
-  const raw = CONFIG.ANIMATION_URL;
-  if (typeof raw !== "string" || !raw.trim()) {
-    throw new Error("VITE_ANIMATION_URL is required for animated WebP assets");
-  }
-  const base = raw.replace(/\/$/, "");
+  const base = getAnimationApiBase();
   return `${base}/animated_webp/0_v1_${tokenUriBuilder(bumpkinParts)}/${animations.join("_")}`;
 };

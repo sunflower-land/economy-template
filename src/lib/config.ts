@@ -11,8 +11,7 @@ function defaultImageBase(): string {
 const API_URL = import.meta.env.VITE_API_URL as string | undefined;
 const PORTAL_APP = import.meta.env.VITE_PORTAL_APP as string | undefined;
 const PORTAL_GAME_URL = import.meta.env.VITE_PORTAL_GAME_URL as string | undefined;
-const ANIMATION_URL = import.meta.env.VITE_ANIMATION_URL as string | undefined;
-/** Minigames API Gateway: `/data`, `/action`, `/animate/...`, `/bumpkins/metadata/...`. */
+/** Minigames API Gateway: `/data`, `/action`, `/bumpkins/metadata/...`. */
 const MINIGAMES_API_URL = import.meta.env.VITE_MINIGAMES_API_URL as
   | string
   | undefined;
@@ -49,7 +48,6 @@ export const CONFIG = {
   API_URL,
   PORTAL_APP,
   PORTAL_GAME_URL: PORTAL_GAME_URL || "https://sunflower-land.com",
-  ANIMATION_URL,
   MINIGAMES_API_URL,
   /** CDN / image host for Phaser tilesets, SFX, and SUNNYSIDE URLs. */
   PROTECTED_IMAGE_URL,

@@ -6,12 +6,7 @@ import { getAnimationApiBase } from "lib/portal/url";
 const DEFAULT_BUMPKIN_TOKEN = "32_1_5_13_18_22_23";
 
 function animationBaseUrl(): string {
-  const fromMinigames = getAnimationApiBase();
-  if (fromMinigames) return fromMinigames;
-  const raw =
-    import.meta.env.VITE_ANIMATION_URL ||
-    "https://animations-dev.sunflower-land.com";
-  return raw.replace(/\/$/, "");
+  return getAnimationApiBase();
 }
 
 export type BumpkinClothing = {

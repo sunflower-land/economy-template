@@ -18,7 +18,6 @@ declare module "*.webp" {
 }
 
 interface ImportMetaEnv {
-  readonly VITE_ANIMATION_URL?: string;
   readonly VITE_IMAGE_BASE_URL?: string;
   readonly VITE_API_URL?: string;
   /** Minigames API Gateway (session, actions, animate, bumpkin metadata). */

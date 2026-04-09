@@ -20,7 +20,7 @@ Use **pixel art** only — **vibrant**, **30° top-down** farming / Sunflower La
 
 ## Phaser characters
 
-- **Bumpkins** in-world use **`BumpkinContainer`** (`src/game/BumpkinContainer.ts`): silhouette + shadow from `public/game/`, then the remote **animation spritesheet** from `VITE_ANIMATION_URL` (or default dev CDN). Do not replace the player or NPCs with colored `Arc` / `Circle` placeholders when a bumpkin is required.
+- **Bumpkins** in-world use **`BumpkinContainer`** (`src/game/BumpkinContainer.ts`): silhouette + shadow from `public/game/`, then the remote **animation spritesheet** from **`https://animations.sunflower-land.com`** (`getAnimationApiBase` in `lib/portal/url.ts`). Do not replace the player or NPCs with colored `Arc` / `Circle` placeholders when a bumpkin is required.
 
 ## Repo policy (this template)
 

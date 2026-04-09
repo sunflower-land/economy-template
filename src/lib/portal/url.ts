@@ -196,18 +196,15 @@ export function getMinigamesApiUrl(): string | undefined {
   return undefined;
 }
 
+/** Bumpkin raster sprites CDN (`/animate/...`, `animated_webp/...`). */
+export const ANIMATIONS_CDN_ORIGIN = "https://animations.sunflower-land.com";
+
 /**
- * Base URL for raster bumpkin frames (`/animate/...`).
- * Prefers `VITE_ANIMATION_URL` (animations CloudFront) over the Minigames API URL.
+ * Base URL for raster bumpkin frames (`/animate/...`, `animated_webp/...`).
+ * Always `animations.sunflower-land.com` (separate from Minigames API).
  */
-export function getAnimationApiBase(): string | undefined {
-  const anim = CONFIG.ANIMATION_URL;
-  if (typeof anim === "string" && anim.trim()) {
-    return normalizeApiBase(anim.trim());
-  }
-  const minigames = getMinigamesApiUrl();
-  if (minigames) return minigames;
-  return undefined;
+export function getAnimationApiBase(): string {
+  return normalizeApiBase(ANIMATIONS_CDN_ORIGIN);
 }
 
 /**
