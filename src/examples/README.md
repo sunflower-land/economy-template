@@ -9,7 +9,7 @@ Phaser mini-game with **MemoryRouter** routes (`/home`, `/game`), **MinigamePort
 Minimal **portal** demo (if included in your fork): **`BoringApp`**.
 
 - **Routes:** **`/`** — welcome; **`/game`** — Phaser + bumpkin.
-- **API:** `src/lib/portal/` — `getPlayerEconomySession`, `postPlayerEconomyAction`, `getMinigamesApiUrl` / `getUrl` / `getJwt`. Example client action defs: **`lib/boringClientActions.ts`**.
+- **API:** `src/lib/portal/` — `getPlayerEconomySession`, `postPlayerEconomyAction`, `postPlayerEconomyGeneratorCollect`, `getMinigamesApiUrl` / `getUrl` / `getJwt`. Example client action defs: **`lib/boringClientActions.ts`**.
 
 ## UI Resources (`ui-resources/`)
 

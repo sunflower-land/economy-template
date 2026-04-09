@@ -1,6 +1,5 @@
 /**
- * Portal login JWT includes top-level `farmId` and `portalId` (see API `portals/login`).
- * Some tokens nest fields under `properties`; merge for compatibility.
+ * Portal JWT payload: `farmId` and `portalId` at the top level of the decoded JSON.
  */
 export function decodePortalToken(token: string): {
   farmId?: number;
@@ -13,23 +12,15 @@ export function decodePortalToken(token: string): {
     const pad = payload.length % 4;
     const padded = pad ? payload + "=".repeat(4 - pad) : payload;
     const json = atob(padded);
-    const decoded = JSON.parse(json) as Record<string, unknown> & {
-      properties?: Record<string, unknown>;
-    };
-    const merged = {
-      ...decoded,
-      ...(typeof decoded.properties === "object" && decoded.properties !== null
-        ? decoded.properties
-        : {}),
-    } as Record<string, unknown>;
-    const farmRaw = merged.farmId;
+    const decoded = JSON.parse(json) as Record<string, unknown>;
+    const farmRaw = decoded.farmId;
     const farmId =
       typeof farmRaw === "number"
         ? farmRaw
         : typeof farmRaw === "string"
           ? Number(farmRaw)
           : undefined;
-    const p = merged.portalId;
+    const p = decoded.portalId;
     const portalId =
       typeof p === "string" && p.trim().length > 0 ? p.trim() : undefined;
     return {

@@ -1,58 +1,31 @@
-export type MintRuleFixed = { amount: number };
+/**
+ * Published economy shapes for minigames. Editor rule JSON under `mint` / `burn` / `produce` /
+ * `collect` is whatever the hosted API returns; the server validates. Use `EconomyActionType`
+ * for the editor card kind; inspect rule objects at runtime when you need specifics.
+ */
 
-export type MintRuleFixedDailyCapped = {
-  amount: number;
-  dailyCap: number;
+/** Editor rule card kind (shop, generator, custom). Not used by the server for validation. */
+export type EconomyActionType = "shop" | "generator" | "custom";
+
+/**
+ * One action from the published economy. Opaque rule records mirror API/editor JSON.
+ */
+export type EconomyActionDefinition = {
+  type?: EconomyActionType;
+  showInShop?: boolean;
+  maxUsesPerDay?: number;
+  purchaseLimit?: number;
+  require?: Record<string, { amount: number }>;
+  requireBelow?: Record<string, number>;
+  requireAbsent?: string[];
+  mint?: Record<string, unknown>;
+  burn?: Record<string, unknown>;
+  produce?: Record<string, unknown>;
+  collect?: Record<string, unknown>;
 };
 
-export type MintRuleRanged = {
-  min: number;
-  max: number;
-  dailyCap: number;
-};
-
-export type MintRule =
-  | MintRuleFixed
-  | MintRuleFixedDailyCapped
-  | MintRuleRanged;
-
-export type BurnRule = { amount: number } | { min: number; max: number };
-
-export type RequireRule = { amount: number };
-
-export type GeneratorRecipeRule = {
-  /**
-   * Milliseconds until the job completes. Optional when the same action’s `collect[token].seconds`
-   * defines duration (editor Generate + linked collect).
-   */
-  msToComplete?: number;
-  /**
-   * Max concurrent jobs with this `outputToken` across all lanes. Omit for no global cap.
-   */
-  limit?: number;
-  /**
-   * Capacity is per lane: only jobs tagged with this same key count toward the cap
-   * (parallel outputs like multiple wormeries each generating Worm).
-   */
-  requires?: string;
-  /**
-   * Legacy: id of a separate action whose `collect` completes this job. Omit when the
-   * same action defines `collect` (unified start + collect with `itemId`).
-   */
-  collectActionId?: string;
-};
-
-export type CollectRule = {
-  amount: number;
-  /** Seconds until this output can be collected (generator / timed production). */
-  seconds?: number;
-  /**
-   * One collect row: probability (0–100) that `amount` is granted. Omit or 100 = always.
-   * Multiple collect rows: relative weight for one weighted pick; one row always grants.
-   * Server is authoritative; the client may mock rolls locally.
-   */
-  chance?: number;
-};
+/** Alias of {@link EconomyActionDefinition} (older template name). */
+export type PlayerEconomyActionDefinition = EconomyActionDefinition;
 
 export type PlayerEconomyBalanceItem = {
   name: string;
@@ -77,38 +50,8 @@ export type PlayerEconomyDescriptions = {
   rules?: string;
 };
 
-/** Persisted by the minigame editor so Rules tab cards round-trip after save/load. */
-export type PlayerEconomyEditorActionType = "shop" | "generator" | "custom";
-
-export type PlayerEconomyActionDefinition = {
-  /**
-   * Which editor rule card this action came from (`generator` = Generate).
-   * Ignored at runtime by the minigame engine.
-   */
-  type?: PlayerEconomyEditorActionType;
-  /**
-   * When false, this action is omitted from the derived in-game shop.
-   * Default true when omitted (backward compatible).
-   */
-  showInShop?: boolean;
-  /** Max successful invocations per UTC day (advanced / iframe minigames). */
-  maxUsesPerDay?: number;
-  /**
-   * Max lifetime purchases of this action per farm (shop). Non-collect invocations only.
-   * Omit or ≤0 for unlimited.
-   */
-  purchaseLimit?: number;
-  require?: Record<string, RequireRule>;
-  requireBelow?: Record<string, number>;
-  requireAbsent?: string[];
-  mint?: Record<string, MintRule>;
-  burn?: Record<string, BurnRule>;
-  produce?: Record<string, GeneratorRecipeRule>;
-  collect?: Record<string, CollectRule>;
-};
-
 export type PlayerEconomyConfig = {
-  actions: Record<string, PlayerEconomyActionDefinition>;
+  actions: Record<string, EconomyActionDefinition>;
   items?: Record<string, PlayerEconomyBalanceItem>;
   descriptions?: PlayerEconomyDescriptions;
   /** Optional themed shell (e.g. bookmatched backdrop). */
@@ -130,7 +73,7 @@ export type GeneratorJob = {
   outputToken: string;
   startedAt: number;
   completesAt: number;
-  /** When set, this job counts only toward that cap lane (see `GeneratorRecipeRule.requires`). */
+  /** When set, this job counts only toward that cap lane (matches produce `requires`). */
   requires?: string;
   /** Action that created this job; used to resolve `collect` rules on harvest. */
   sourceActionId?: string;

@@ -17,15 +17,17 @@ import {
   runtimeToMinigameSession,
 } from "lib/portal/runtimeHelpers";
 import { useMinigameSession } from "lib/portal/sessionProvider";
-import { postPlayerEconomyAction } from "lib/portal/api";
+import {
+  postPlayerEconomyAction,
+  postPlayerEconomyGeneratorCollect,
+} from "lib/portal/api";
 import { getMinigamesApiUrl } from "lib/portal/url";
 import {
   processPlayerEconomyAction,
   processPlayerEconomyGeneratorCollect,
-  type PlayerEconomyActionDefinition,
+  type EconomyActionDefinition,
   type PlayerEconomyConfig,
 } from "lib/portal/processAction";
-import { migrateLegacyPlayerEconomyConfigFields } from "lib/portal/playerEconomyMigration";
 import type { PlayerEconomyProcessResult } from "./lib/types";
 import { getMinigameTokenImage } from "./lib/minigameTokenIcons";
 import {
@@ -85,21 +87,21 @@ export const UiResourcesDashboard: React.FC = () => {
     clearApiError,
   } = useMinigameSession();
 
-  const config: PlayerEconomyConfig = useMemo(
-    () =>
-      migrateLegacyPlayerEconomyConfigFields({
-        actions: actions as Record<string, PlayerEconomyActionDefinition>,
-        items: economyMeta?.items,
-        descriptions: economyMeta?.descriptions,
-        visualTheme: economyMeta?.visualTheme,
-        playUrl: economyMeta?.playUrl,
-        mainCurrencyToken: economyMeta?.mainCurrencyToken,
-        initialBalances: economyMeta?.initialBalances,
-        productionCollectByStartId: economyMeta?.productionCollectByStartId,
-        dashboard: economyMeta?.dashboard,
-      }),
-    [actions, economyMeta],
-  );
+  const config: PlayerEconomyConfig = useMemo(() => {
+    const main = economyMeta?.mainCurrencyToken?.trim();
+    return {
+      actions: actions as Record<string, EconomyActionDefinition>,
+      ...(economyMeta?.items ? { items: economyMeta.items } : {}),
+      ...(economyMeta?.descriptions
+        ? { descriptions: economyMeta.descriptions }
+        : {}),
+      ...(economyMeta?.visualTheme
+        ? { visualTheme: economyMeta.visualTheme }
+        : {}),
+      ...(economyMeta?.playUrl ? { playUrl: economyMeta.playUrl } : {}),
+      ...(main ? { mainCurrencyToken: main } : {}),
+    };
+  }, [actions, economyMeta]);
 
   const runtime = useMemo(
     () =>
@@ -232,9 +234,9 @@ export const UiResourcesDashboard: React.FC = () => {
 
       if (useServerCollect) {
         try {
-          const data = await postPlayerEconomyAction({
+          const data = await postPlayerEconomyGeneratorCollect({
             token: jwt,
-            itemId: input.collectJobId.trim(),
+            jobId: input.collectJobId.trim(),
           });
           const mergedPe = mergeMinigameEconomyFromApi(
             runtimeToMinigameSession(prev),

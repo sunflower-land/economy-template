@@ -3,17 +3,14 @@ import type {
   PlayerEconomyDescriptions,
 } from "./playerEconomyTypes";
 
-/** Top-level + legacy dashboard fields merged into {@link PlayerEconomyConfig}. */
+/** Session metadata merged into dashboard / config (`items`, theme, optional game data). */
 export type MinigameSessionEconomyMeta = {
   items?: Record<string, PlayerEconomyBalanceItem>;
   descriptions?: PlayerEconomyDescriptions;
   visualTheme?: string;
   playUrl?: string;
   mainCurrencyToken?: string;
-  initialBalances?: Record<string, number>;
-  productionCollectByStartId?: Record<string, string>;
   dashboard?: {
-    productionCollectByStartId?: Record<string, string>;
     visualTheme?: string;
     /**
      * Optional server-defined Hide & Seek round (same shape as client).
@@ -49,7 +46,7 @@ export type MinigameSessionResponse = {
     dailyMinted?: { utcDay: string; minted: Record<string, number> };
     dailyActionUses?: { utcDay: string; byAction: Record<string, number> };
     purchaseCounts?: Record<string, number>;
-    /** Some APIs mirror `items` inside `playerEconomy`. */
+    /** Some responses mirror `items` inside `playerEconomy`. */
     items?: Record<string, PlayerEconomyBalanceItem>;
   };
   actions: Record<string, unknown>;
@@ -58,8 +55,6 @@ export type MinigameSessionResponse = {
   visualTheme?: string;
   playUrl?: string;
   mainCurrencyToken?: string;
-  initialBalances?: Record<string, number>;
-  productionCollectByStartId?: Record<string, string>;
   dashboard?: MinigameSessionEconomyMeta["dashboard"];
 };
 
@@ -77,7 +72,7 @@ export type BootstrapContext = {
   id: number;
   jwt: string;
   /**
-   * Must match `portalId` inside the portal JWT (client-side; Minigames API reads
+   * Must match `portalId` inside the portal JWT (client-side; economies API reads
    * portal id from the Bearer token for session + actions).
    */
   portalId: string;
@@ -113,10 +108,6 @@ export function buildEconomyMetaFromSession(
     visualTheme: raw.visualTheme ?? raw.dashboard?.visualTheme,
     playUrl: raw.playUrl,
     mainCurrencyToken: raw.mainCurrencyToken,
-    initialBalances: raw.initialBalances,
-    productionCollectByStartId:
-      raw.productionCollectByStartId ??
-      raw.dashboard?.productionCollectByStartId,
     dashboard: raw.dashboard,
   };
 }

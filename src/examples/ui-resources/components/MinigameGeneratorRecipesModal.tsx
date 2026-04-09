@@ -7,7 +7,6 @@ import { ResizableBar } from "components/ui/ProgressBar";
 import { PIXEL_SCALE } from "lib/constants";
 import { SUNNYSIDE } from "example-assets/sunnyside";
 import type {
-  BurnRule,
   PlayerEconomyConfig,
   PlayerEconomyRuntimeState,
 } from "../lib/types";
@@ -316,7 +315,7 @@ export const MinigameGeneratorRecipesModal: React.FC<Props> = ({
                                 style={iconSm}
                               />
                               <span className="text-xs  leading-tight">
-                                {formatBurnRuleForDisplay(rule as BurnRule)}{" "}
+                                {formatBurnRuleForDisplay(rule)}{" "}
                                 {capTokenDisplayName(token, config)}
                               </span>
                             </div>

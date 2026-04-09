@@ -23,7 +23,7 @@ import {
   isMintOnlyWormGrant,
   resolveClaimFreeWormsDurationMs,
 } from "./lib/chickenRescueFreeWorms";
-import type { PlayerEconomyActionDefinition } from "lib/portal/playerEconomyTypes";
+import type { EconomyActionDefinition } from "lib/portal/playerEconomyTypes";
 
 export const ChickenRescueHome: React.FC = () => {
   const navigate = useNavigate();
@@ -49,7 +49,7 @@ export const ChickenRescueHome: React.FC = () => {
   const showFreeWormsModal = showFreeWormsOffer && !skipFreeWormsSession;
 
   const claimDef = actions[actionIds.claimFreeWorms] as
-    | PlayerEconomyActionDefinition
+    | EconomyActionDefinition
     | undefined;
   const claimWaitMs = resolveClaimFreeWormsDurationMs(claimDef);
   const freeWormsBodyKey =

@@ -1,11 +1,27 @@
 import { tokenDisplayName } from "./minigameConfigHelpers";
-import { isGeneratorBalanceItem } from "lib/portal/playerEconomyMigration";
+import { isGeneratorBalanceItem } from "lib/portal/playerEconomyItemHelpers";
 import { resolveProduceDurationMs } from "lib/portal/resolveProduceDuration";
 import type {
-  CollectRule,
   PlayerEconomyConfig,
   PlayerEconomyRuntimeState,
 } from "lib/portal/processAction";
+
+/** One `collect` row from session actions (dashboard copy). */
+export type CollectRuleRow = {
+  amount: number;
+  chance?: number;
+  seconds?: unknown;
+};
+
+export function asCollectRuleRow(raw: unknown): CollectRuleRow | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  if (typeof r.amount !== "number") return null;
+  const row: CollectRuleRow = { amount: r.amount };
+  if (typeof r.chance === "number") row.chance = r.chance;
+  if (r.seconds !== undefined) row.seconds = r.seconds;
+  return row;
+}
 
 export type CapBalanceProductionSlot = {
   capToken: string;
@@ -29,8 +45,7 @@ export function recipeJobKey(slot: CapBalanceProductionSlot): string {
 }
 
 /**
- * Finds every `produce` rule with `requires` and a collect target: either `collect` on the
- * same action (`collectActionId` is set to that action id) or legacy `collectActionId` on the rule.
+ * Finds every `produce` rule with `requires` where the same action defines inline `collect`.
  */
 /** Production UI only lists lanes whose cap token is an item with `generator: true`. */
 export function isGeneratorCapToken(
@@ -80,24 +95,30 @@ export function extractCapBalanceProductionSlots(
     if (!def.produce) continue;
     const inlineCollect =
       def.collect !== undefined && Object.keys(def.collect).length > 0;
-    for (const [outputToken, rule] of Object.entries(def.produce)) {
+    if (!inlineCollect) continue;
+    for (const [outputToken, raw] of Object.entries(def.produce)) {
+      const rule =
+        raw && typeof raw === "object"
+          ? (raw as Record<string, unknown>)
+          : {};
       const rawReq = rule.requires;
       const requires =
         typeof rawReq === "string"
           ? rawReq.trim()
           : String(rawReq ?? "").trim();
       if (!requires) continue;
-      const collectActionId = inlineCollect
-        ? actionId
-        : rule.collectActionId?.trim();
-      if (!collectActionId) continue;
+      const limit =
+        typeof rule.limit === "number" ? rule.limit : undefined;
       slots.push({
         capToken: requires,
         outputToken,
         startActionId: actionId,
-        collectActionId,
-        msToComplete: resolveProduceDurationMs(outputToken, rule, def.collect),
-        limit: rule.limit,
+        collectActionId: actionId,
+        msToComplete: resolveProduceDurationMs(
+          outputToken,
+          def.collect as Record<string, { seconds?: unknown }> | undefined,
+        ),
+        ...(limit !== undefined ? { limit } : {}),
       });
     }
   }
@@ -186,19 +207,19 @@ export function capTokenDisplayName(
 export function getCollectRuleForSlot(
   config: PlayerEconomyConfig,
   slot: CapBalanceProductionSlot,
-): CollectRule | null {
+): CollectRuleRow | null {
   const collect = config.actions[slot.collectActionId]?.collect;
   if (!collect) return null;
-  const byOutput = collect[slot.outputToken];
+  const byOutput = asCollectRuleRow(collect[slot.outputToken]);
   if (byOutput) return byOutput;
   const entries = Object.entries(collect);
   if (!entries.length) return null;
-  return entries[0][1];
+  return asCollectRuleRow(entries[0][1]);
 }
 
 /** True when collect is not guaranteed (client shows "?" while producing). */
 export function isChanceBasedCollectRule(
-  rule: CollectRule | null | undefined,
+  rule: CollectRuleRow | null | undefined,
 ): boolean {
   if (!rule) return false;
   const c = rule.chance;
@@ -218,7 +239,7 @@ export function isDeterministicCollectYield(
   if (!collect) return false;
   const keys = Object.keys(collect);
   if (keys.length !== 1) return false;
-  const rule = collect[keys[0]];
+  const rule = asCollectRuleRow(collect[keys[0]]);
   if (!rule) return false;
   return !isChanceBasedCollectRule(rule);
 }
@@ -248,10 +269,15 @@ export type CollectDropOddsRow = {
  * returns normalized percentages for UI (same weights as server multi-row collect).
  */
 export function getCollectDropOddsForAction(
-  collect: Record<string, CollectRule> | undefined,
+  collect: Record<string, unknown> | undefined,
 ): CollectDropOddsRow[] | null {
   if (!collect) return null;
-  const entries = Object.entries(collect);
+  const entries = Object.entries(collect)
+    .map(([k, v]): [string, CollectRuleRow] | null => {
+      const r = asCollectRuleRow(v);
+      return r ? [k, r] : null;
+    })
+    .filter((e): e is [string, CollectRuleRow] => e != null);
   if (entries.length < 2) return null;
   const weights = entries.map(([, r]) => {
     if (r.chance === undefined) return 100;
@@ -287,11 +313,13 @@ export function getCollectOutputForSlot(
   if (!collect) return null;
   const entries = Object.entries(collect);
   if (!entries.length) return null;
-  const direct = collect[slot.outputToken];
+  const direct = asCollectRuleRow(collect[slot.outputToken]);
   if (direct) {
     return { token: slot.outputToken, amount: direct.amount };
   }
-  const [token, rule] = entries[0];
+  const [token, raw] = entries[0];
+  const rule = asCollectRuleRow(raw);
+  if (!rule) return null;
   return { token, amount: rule.amount };
 }
 

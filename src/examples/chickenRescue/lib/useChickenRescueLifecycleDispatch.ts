@@ -1,5 +1,8 @@
 import { useCallback } from "react";
-import { postPlayerEconomyAction } from "lib/portal/api";
+import {
+  postPlayerEconomyAction,
+  postPlayerEconomyGeneratorCollect,
+} from "lib/portal/api";
 import { useMinigameSession } from "lib/portal";
 import { getMinigamesApiUrl } from "lib/portal/url";
 import type { MinigameActionDefinition } from "lib/portal/processAction";
@@ -121,7 +124,7 @@ export function useChickenRescueLifecycleDispatch() {
         if (!jobId) {
           throw new Error("Server did not return a worm production job");
         }
-        const r2 = await postPlayerEconomyAction({ token, itemId: jobId });
+        const r2 = await postPlayerEconomyGeneratorCollect({ token, jobId });
         replacePlayerEconomy(
           normalizeMinigameFromApi(
             mergeMinigameEconomyFromApi(after1, r2.playerEconomy),

@@ -58,9 +58,6 @@ export function chooksForScore(score: number): number {
   return Math.min(100, Math.max(0, Math.floor(score)));
 }
 
-/** @deprecated Use `chooksForScore` */
-export const grubsForScore = chooksForScore;
-
 export function hasLiveGame(
   economy: MinigameSessionResponse["playerEconomy"],
 ): boolean {

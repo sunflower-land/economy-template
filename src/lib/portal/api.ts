@@ -49,15 +49,9 @@ export async function getPlayerEconomySession({
   return parsed.data;
 }
 
-/**
- * Minigames `POST /action`:
- * - `{ itemId }` → `{ "type": "generator.collected", "itemId" }` (finish a generator job).
- * - `{ action, amounts? }` → `{ "type": "minigame.action", "action", "amounts"? }` (named economy action).
- */
-export async function postPlayerEconomyAction(
-  params:
-    | { token: string; itemId: string }
-    | { token: string; action: string; amounts?: Record<string, number> },
+async function postMinigameEconomyActionRequest(
+  token: string,
+  body: Record<string, unknown>,
 ): Promise<MinigameActionResponse> {
   const base = getMinigamesApiUrl();
   if (!base) {
@@ -65,25 +59,6 @@ export async function postPlayerEconomyAction(
       "No Minigames API URL (set VITE_MINIGAMES_API_URL or pass minigamesApiUrl=…)",
     );
   }
-
-  const { token, ...rest } = params;
-  const body =
-    "itemId" in rest
-      ? (() => {
-          const itemId = rest.itemId.trim();
-          if (!itemId) {
-            throw new Error("itemId is required for generator.collected");
-          }
-          return {
-            type: PLAYER_ECONOMY_GENERATOR_COLLECTED_ACTION,
-            itemId,
-          };
-        })()
-      : {
-          type: "minigame.action" as const,
-          action: rest.action,
-          ...(rest.amounts !== undefined ? { amounts: rest.amounts } : {}),
-        };
 
   const response = await window.fetch(`${base}/action`, {
     method: "POST",
@@ -115,4 +90,37 @@ export async function postPlayerEconomyAction(
   }
 
   return envelope.data;
+}
+
+/**
+ * Collect a completed generator job. `jobId` is the key in `playerEconomy.generating`
+ * (same value the economies API expects as `itemId` on `type: "generator.collected"`).
+ */
+export async function postPlayerEconomyGeneratorCollect(params: {
+  token: string;
+  jobId: string;
+}): Promise<MinigameActionResponse> {
+  const jobId = params.jobId.trim();
+  if (!jobId) {
+    throw new Error("jobId is required to collect a generator job");
+  }
+  return postMinigameEconomyActionRequest(params.token, {
+    type: PLAYER_ECONOMY_GENERATOR_COLLECTED_ACTION,
+    itemId: jobId,
+  });
+}
+
+/**
+ * Named economy action: `{ "type": "minigame.action", "action", "amounts"? }`.
+ */
+export async function postPlayerEconomyAction(params: {
+  token: string;
+  action: string;
+  amounts?: Record<string, number>;
+}): Promise<MinigameActionResponse> {
+  return postMinigameEconomyActionRequest(params.token, {
+    type: "minigame.action",
+    action: params.action,
+    ...(params.amounts !== undefined ? { amounts: params.amounts } : {}),
+  });
 }

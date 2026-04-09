@@ -23,7 +23,7 @@
 | Audio | `howler`, `src/lib/audio.ts`, `src/config/audio.config.ts` |
 | Icons | URL config only, `src/config/icons.config.ts`, `src/components/ui/Icon.tsx` |
 | Backend (stub) | `src/lib/api.ts` |
-| Portal / player economy | `src/lib/portal/` (`getPlayerEconomySession`, `postPlayerEconomyAction`, `getMinigamesApiUrl`) |
+| Portal / player economy | `src/lib/portal/` (`getPlayerEconomySession`, `postPlayerEconomyAction`, `postPlayerEconomyGeneratorCollect`, `getMinigamesApiUrl`) |
 
 ## Phaser × React boundaries
 

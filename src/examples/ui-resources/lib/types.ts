@@ -1,5 +1,4 @@
 export type {
-  BurnRule,
   GeneratorJob,
   PlayerEconomyCollectGrant,
   PlayerEconomyConfig,

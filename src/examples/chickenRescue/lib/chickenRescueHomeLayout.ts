@@ -26,7 +26,7 @@ export function grassTileSizePx(
 }
 
 /**
- * Hero chook / shared chicken width (same game-pixel width as legacy home coin chickens).
+ * Hero chook / shared chicken width (game-pixel width aligned with home coin chickens).
  */
 export function chookDisplayWidthPx(
   scale: number = CHICKEN_RESCUE_HOME_PIXEL_SCALE,

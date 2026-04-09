@@ -12,7 +12,10 @@ import type {
   MinigameSessionEconomyMeta,
   MinigameSessionResponse,
 } from "./types";
-import { postPlayerEconomyAction } from "./api";
+import {
+  postPlayerEconomyAction,
+  postPlayerEconomyGeneratorCollect,
+} from "./api";
 import { PLAYER_ECONOMY_GENERATOR_COLLECTED_ACTION } from "./playerEconomyTypes";
 import {
   applyOptimisticPortalAction,
@@ -119,9 +122,9 @@ export function MinigameSessionProvider({
 
       const postPromise =
         "collectJobId" in input
-          ? postPlayerEconomyAction({
+          ? postPlayerEconomyGeneratorCollect({
               token: bootstrap.jwt as string,
-              itemId: input.collectJobId,
+              jobId: input.collectJobId,
             })
           : postPlayerEconomyAction({
               token: bootstrap.jwt as string,
@@ -255,9 +258,9 @@ export function MinigameSessionProvider({
           try {
             const res =
               "collectJobId" in input
-                ? await postPlayerEconomyAction({
+                ? await postPlayerEconomyGeneratorCollect({
                     token: bootstrap.jwt as string,
-                    itemId: input.collectJobId,
+                    jobId: input.collectJobId,
                   })
                 : await postPlayerEconomyAction({
                     token: bootstrap.jwt as string,

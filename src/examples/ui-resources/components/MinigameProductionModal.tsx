@@ -4,8 +4,9 @@ import { CloseButtonPanel } from "./CloseButtonPanel";
 import { Button } from "components/ui/Button";
 import { Label } from "components/ui/Label";
 import { PIXEL_SCALE } from "lib/constants";
-import type { BurnRule, PlayerEconomyConfig } from "../lib/types";
+import type { PlayerEconomyConfig } from "../lib/types";
 import {
+  asCollectRuleRow,
   capTokenDisplayName,
   formatMinigameDuration,
   getCollectDropOddsForSlot,
@@ -13,6 +14,7 @@ import {
   getCollectRuleForSlot,
   isChanceBasedCollectRule,
   type CapBalanceProductionSlot,
+  type CollectRuleRow,
 } from "../lib/extractProductionSlots";
 import { formatBurnRuleForDisplay } from "../lib/minigameConfigHelpers";
 import { getMinigameTokenImage } from "../lib/minigameTokenIcons";
@@ -68,9 +70,14 @@ export const MinigameProductionModal: React.FC<Props> = ({
     ? Object.entries(startDef.require)
     : [];
 
-  const collectLines =
+  const collectLines: [string, CollectRuleRow][] =
     collectDef?.collect && variant === "collect"
       ? Object.entries(collectDef.collect)
+          .map(([k, v]) => {
+            const row = asCollectRuleRow(v);
+            return row ? ([k, row] as const) : null;
+          })
+          .filter((e): e is [string, CollectRuleRow] => e != null)
       : [];
 
   const startOutputPreview = getCollectOutputForSlot(config, slot);
@@ -211,7 +218,7 @@ export const MinigameProductionModal: React.FC<Props> = ({
                       {burnEntries.map(([token, rule]) => (
                         <li key={token} className="flex items-center gap-1">
                           <span>
-                            {formatBurnRuleForDisplay(rule as BurnRule)}
+                            {formatBurnRuleForDisplay(rule)}
                             {"\u00d7 "}
                             {capTokenDisplayName(token, config)}
                           </span>

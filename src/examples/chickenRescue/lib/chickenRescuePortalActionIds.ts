@@ -1,12 +1,10 @@
 import { CONFIG } from "lib/config";
-import type {
-  BurnRule,
-  MinigameActionDefinition,
-} from "lib/portal/processAction";
+import type { MinigameActionDefinition } from "lib/portal/processAction";
 
-function burnFixedAmount(rule: BurnRule | undefined): number | undefined {
-  if (!rule || !("amount" in rule)) return undefined;
-  return rule.amount;
+function burnFixedAmount(rule: unknown): number | undefined {
+  if (!rule || typeof rule !== "object" || !("amount" in rule)) return undefined;
+  const a = (rule as { amount: unknown }).amount;
+  return typeof a === "number" ? a : undefined;
 }
 
 /**
@@ -161,7 +159,14 @@ function matchesClaimFreeWorms(def: MinigameActionDefinition): boolean {
   if (!p || !c) {
     return false;
   }
-  if (!("amount" in c) || typeof c.amount !== "number" || c.amount <= 0) {
+  if (typeof c !== "object" || c === null) {
+    return false;
+  }
+  const collectRow = c as { amount?: unknown };
+  if (
+    typeof collectRow.amount !== "number" ||
+    collectRow.amount <= 0
+  ) {
     return false;
   }
   return typeof p === "object" && p !== null;

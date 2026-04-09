@@ -1,34 +1,14 @@
 /**
- * Action rule shapes aligned with sunflower-land-api minigames (for client-side defs).
- * Server validates; this file is types only — no reducers.
+ * Minigame economy action types. Rule payloads under each action are API-shaped;
+ * see {@link EconomyActionDefinition}.
  */
 
-export type MintRuleFixed = { amount: number };
-export type MintRuleFixedDailyCapped = { amount: number; dailyCap: number };
-export type MintRuleRanged = { min: number; max: number; dailyCap: number };
-export type MintRule =
-  | MintRuleFixed
-  | MintRuleFixedDailyCapped
-  | MintRuleRanged;
-export type BurnRule = { amount: number };
+export type {
+  EconomyActionType,
+  EconomyActionDefinition,
+  PlayerEconomyActionDefinition,
+} from "./playerEconomyTypes";
 
-/** Minimum balance; tokens are not consumed (unlike {@link BurnRule}). */
-export type RequireRule = { amount: number };
+import type { EconomyActionDefinition } from "./playerEconomyTypes";
 
-export type ProduceRule = {
-  msToComplete: number;
-  limit?: number;
-  requires?: string;
-};
-
-export type CollectRule = { amount: number };
-
-export type MinigameActionDefinition = {
-  require?: Record<string, RequireRule>;
-  requireBelow?: Record<string, number>;
-  requireAbsent?: string[];
-  mint?: Record<string, MintRule>;
-  burn?: Record<string, BurnRule>;
-  produce?: Record<string, ProduceRule>;
-  collect?: Record<string, CollectRule>;
-};
+export type MinigameActionDefinition = EconomyActionDefinition;

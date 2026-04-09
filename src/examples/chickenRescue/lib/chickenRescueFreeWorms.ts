@@ -1,10 +1,7 @@
 import type { MinigameSessionResponse } from "lib/portal";
 import { cloneMinigameSnapshot } from "lib/portal/runtimeHelpers";
 import { utcCalendarDay } from "lib/portal/processAction";
-import type {
-  GeneratorRecipeRule,
-  PlayerEconomyActionDefinition,
-} from "lib/portal/playerEconomyTypes";
+import type { EconomyActionDefinition } from "lib/portal/playerEconomyTypes";
 import { resolveProduceDurationMs } from "lib/portal/resolveProduceDuration";
 
 const FREE_WORMS_DAILY_STORAGE_KEY = "chicken-rescue.free-worms-claimed-utc-day";
@@ -58,16 +55,15 @@ export function hasClientTrackedFreeWormsTimerStartToday(): boolean {
 }
 
 export function resolveClaimFreeWormsDurationMs(
-  def: PlayerEconomyActionDefinition | undefined,
+  def: EconomyActionDefinition | undefined,
 ): number {
   if (!def?.produce || !def.collect) return 0;
   const entries = Object.entries(def.produce);
   if (entries.length === 0) return 0;
-  const [outputToken, produceRule] = entries[0];
+  const [outputToken] = entries[0];
   return resolveProduceDurationMs(
     outputToken,
-    produceRule as GeneratorRecipeRule,
-    def.collect,
+    def.collect as Record<string, { seconds?: unknown }> | undefined,
   );
 }
 
@@ -86,7 +82,7 @@ export function hasPendingFreeWormsJob(
  * Use this for optimistic balances that match server mint-only claims.
  */
 export function isMintOnlyWormGrant(
-  def: PlayerEconomyActionDefinition | undefined,
+  def: EconomyActionDefinition | undefined,
 ): boolean {
   if (!def?.mint) return false;
   const m = def.mint["4"];
@@ -97,7 +93,7 @@ export function isMintOnlyWormGrant(
 
 export function applyMintOnlyFreeWorms(
   economy: MinigameSessionResponse["playerEconomy"],
-  def: PlayerEconomyActionDefinition,
+  def: EconomyActionDefinition,
 ): { ok: true; playerEconomy: MinigameSessionResponse["playerEconomy"] } {
   const m = def.mint?.["4"];
   const add =
@@ -122,7 +118,7 @@ export function canShowFreeWormsClaimModal(input: {
   if (hasPendingFreeWormsJob(playerEconomy, claimActionId, now)) {
     return false;
   }
-  const def = actions[claimActionId] as PlayerEconomyActionDefinition;
+  const def = actions[claimActionId] as EconomyActionDefinition;
   const cap = def?.maxUsesPerDay;
   if (typeof cap === "number" && cap > 0) {
     const bucket = playerEconomy.dailyActionUses;

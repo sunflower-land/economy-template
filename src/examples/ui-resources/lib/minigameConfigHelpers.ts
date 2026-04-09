@@ -1,6 +1,5 @@
 import type {
-  BurnRule,
-  PlayerEconomyActionDefinition,
+  EconomyActionDefinition,
   PlayerEconomyConfig,
   PlayerEconomyRuntimeState,
 } from "lib/portal/processAction";
@@ -11,18 +10,24 @@ import type {
   MinigameShopItemUi,
 } from "./minigameDashboardTypes";
 import { getMinigameTokenImage } from "./minigameTokenIcons";
-import {
-  isGeneratorBalanceItem,
-  migrateLegacyPlayerEconomyConfigFields,
-} from "lib/portal/playerEconomyMigration";
+import { isGeneratorBalanceItem } from "lib/portal/playerEconomyItemHelpers";
 
 /** Human-readable burn cost for dashboard copy (fixed or range). */
-export function formatBurnRuleForDisplay(rule: BurnRule): string {
-  if ("min" in rule && "max" in rule) {
-    if (rule.min === rule.max) return String(rule.min);
-    return `${rule.min}–${rule.max}`;
+export function formatBurnRuleForDisplay(rule: unknown): string {
+  if (rule && typeof rule === "object" && "min" in rule && "max" in rule) {
+    const r = rule as { min: unknown; max: unknown };
+    const min = typeof r.min === "number" ? r.min : Number(r.min);
+    const max = typeof r.max === "number" ? r.max : Number(r.max);
+    if (Number.isFinite(min) && Number.isFinite(max)) {
+      if (min === max) return String(min);
+      return `${min}–${max}`;
+    }
   }
-  return String(rule.amount);
+  if (rule && typeof rule === "object" && "amount" in rule) {
+    const a = (rule as { amount: unknown }).amount;
+    if (typeof a === "number" && Number.isFinite(a)) return String(a);
+  }
+  return "?";
 }
 
 /**
@@ -192,19 +197,27 @@ function firstRecordEntry<T>(
   return e[0];
 }
 
-function burnRulePriceAmount(rule: BurnRule): number {
-  if ("min" in rule && "max" in rule) return rule.max;
-  return rule.amount;
+function burnRulePriceAmount(rule: unknown): number {
+  if (rule && typeof rule === "object" && "min" in rule && "max" in rule) {
+    const r = rule as { max: unknown };
+    const max = typeof r.max === "number" ? r.max : Number(r.max);
+    return Number.isFinite(max) ? max : 0;
+  }
+  if (rule && typeof rule === "object" && "amount" in rule) {
+    const a = (rule as { amount: unknown }).amount;
+    return typeof a === "number" && Number.isFinite(a) ? a : 0;
+  }
+  return 0;
 }
 
-function isProduceOnly(def: PlayerEconomyActionDefinition): boolean {
+function isProduceOnly(def: EconomyActionDefinition): boolean {
   const p = def.produce && Object.keys(def.produce).length > 0;
   const m = def.mint && Object.keys(def.mint).length > 0;
   const b = def.burn && Object.keys(def.burn).length > 0;
   return Boolean(p && !m && !b);
 }
 
-function isCollectOnly(def: PlayerEconomyActionDefinition): boolean {
+function isCollectOnly(def: EconomyActionDefinition): boolean {
   const c = def.collect && Object.keys(def.collect).length > 0;
   const m = def.mint && Object.keys(def.mint).length > 0;
   const b = def.burn && Object.keys(def.burn).length > 0;
@@ -245,7 +258,7 @@ export function deriveShopItemsFromConfig(
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([token, rule]) => ({
           token,
-          amount: burnRulePriceAmount(rule as BurnRule),
+          amount: burnRulePriceAmount(rule),
         }));
     } else if (req && Object.keys(req).length) {
       prices = Object.entries(req)
@@ -349,29 +362,27 @@ export function buildMinigameDashboardData(
   config: PlayerEconomyConfig,
   state: PlayerEconomyRuntimeState,
 ): MinigameDashboardData {
-  const normalized = migrateLegacyPlayerEconomyConfigFields(config);
-
-  const displayName = normalized.descriptions?.title?.trim() || slug;
+  const displayName = config.descriptions?.title?.trim() || slug;
 
   const headerBalanceToken =
-    getPrimaryTradableMarketplaceItem(normalized)?.tokenKey ?? "";
+    getPrimaryTradableMarketplaceItem(config)?.tokenKey ?? "";
 
-  const visualTheme = normalized.visualTheme;
+  const visualTheme = config.visualTheme;
 
-  const mergedState = mergeRuntimeWithInitialBalances(normalized, state);
+  const mergedState = mergeRuntimeWithInitialBalances(config, state);
 
   return {
     slug,
     portalName,
     displayName,
-    config: normalized,
+    config,
     state: mergedState,
     ui: buildUi(
-      normalized,
+      config,
       headerBalanceToken,
       visualTheme,
       mergedState.purchaseCounts,
     ),
-    playUrl: normalized.playUrl,
+    playUrl: config.playUrl,
   };
 }

@@ -1,19 +1,66 @@
 import { resolveProduceDurationMs } from "./resolveProduceDuration";
 import {
-  BurnRule,
-  CollectRule,
   DailyActionUsesBucket,
   DailyMintBucket,
-  PlayerEconomyActionDefinition,
+  EconomyActionDefinition,
   PlayerEconomyConfig,
   PlayerEconomyProcessInput,
   PlayerEconomyProcessResult,
   PlayerEconomyRuntimeState,
-  MintRule,
-  GeneratorRecipeRule,
-  RequireRule,
   PLAYER_ECONOMY_GENERATOR_COLLECTED_ACTION,
 } from "./playerEconomyTypes";
+
+/** Internal: optimistic client mirrors common mint JSON shapes. */
+type MintRule =
+  | { amount: number }
+  | { amount: number; dailyCap: number }
+  | { min: number; max: number; dailyCap: number };
+
+type BurnRule = { amount: number } | { min: number; max: number };
+
+type RequireRule = { amount: number };
+
+type CollectRule = {
+  amount: number;
+  seconds?: number;
+  chance?: number;
+};
+
+type GeneratorRecipeRule = {
+  limit?: number;
+  requires?: string;
+};
+
+function asBurnRule(rule: unknown): BurnRule | undefined {
+  if (!rule || typeof rule !== "object") return undefined;
+  const r = rule as Record<string, unknown>;
+  if (typeof r.min === "number" && typeof r.max === "number") {
+    return { min: r.min, max: r.max };
+  }
+  if (typeof r.amount === "number") {
+    return { amount: r.amount };
+  }
+  return undefined;
+}
+
+function asCollectRule(rule: unknown): CollectRule | undefined {
+  if (!rule || typeof rule !== "object") return undefined;
+  const r = rule as Record<string, unknown>;
+  if (typeof r.amount !== "number") return undefined;
+  const out: CollectRule = { amount: r.amount };
+  if (typeof r.seconds === "number") out.seconds = r.seconds;
+  if (typeof r.chance === "number") out.chance = r.chance;
+  return out;
+}
+
+function asGeneratorRecipeRule(rule: unknown): GeneratorRecipeRule {
+  if (!rule || typeof rule !== "object") return {};
+  const r = rule as Record<string, unknown>;
+  const out: GeneratorRecipeRule = {};
+  if (typeof r.limit === "number") out.limit = r.limit;
+  if (typeof r.requires === "string") out.requires = r.requires;
+  return out;
+}
 
 /** User-facing label for a balance token; uses `items[token].name` when present. */
 function itemDisplayName(config: PlayerEconomyConfig, token: string): string {
@@ -39,6 +86,25 @@ export function rolloverDailyMintedIfNeeded(
 
 function dailyMintSubKey(actionId: string, token: string): string {
   return `${actionId}|${token}`;
+}
+
+function asMintRule(rule: unknown): MintRule | undefined {
+  if (!rule || typeof rule !== "object") return undefined;
+  const r = rule as Record<string, unknown>;
+  if (
+    typeof r.min === "number" &&
+    typeof r.max === "number" &&
+    typeof r.dailyCap === "number"
+  ) {
+    return { min: r.min, max: r.max, dailyCap: r.dailyCap };
+  }
+  if (typeof r.amount === "number" && typeof r.dailyCap === "number") {
+    return { amount: r.amount, dailyCap: r.dailyCap };
+  }
+  if (typeof r.amount === "number") {
+    return { amount: r.amount };
+  }
+  return undefined;
 }
 
 function isRangedMint(rule: MintRule): rule is {
@@ -158,12 +224,16 @@ function isRangedBurn(rule: BurnRule): rule is { min: number; max: number } {
 function applyBurns(
   config: PlayerEconomyConfig,
   balances: Record<string, number>,
-  burn: Record<string, BurnRule> | undefined,
+  burn: Record<string, unknown> | undefined,
   amounts: Record<string, number> | undefined,
 ): string | undefined {
   if (!burn) return undefined;
-  for (const [token, rule] of Object.entries(burn)) {
+  for (const [token, raw] of Object.entries(burn)) {
+    const rule = asBurnRule(raw);
     const label = itemDisplayName(config, token);
+    if (!rule) {
+      return `Invalid burn rule for ${label}`;
+    }
     const have = getBalance(balances, token);
     let sub: number;
     if (isRangedBurn(rule)) {
@@ -182,7 +252,8 @@ function applyBurns(
       return `Insufficient ${label}`;
     }
   }
-  for (const [token, rule] of Object.entries(burn)) {
+  for (const [token, raw] of Object.entries(burn)) {
+    const rule = asBurnRule(raw)!;
     const sub = isRangedBurn(rule) ? (amounts?.[token] as number) : rule.amount;
     balances[token] = getBalance(balances, token) - sub;
     if (balances[token] === 0) {
@@ -202,24 +273,10 @@ function newProducingJobId(): string {
 function findCollectDefinitionForJob(
   config: PlayerEconomyConfig,
   job: PlayerEconomyRuntimeState["generating"][string],
-): PlayerEconomyActionDefinition | undefined {
-  if (job.sourceActionId) {
-    const d = config.actions[job.sourceActionId];
-    if (d?.collect?.[job.outputToken]) return d;
-  }
-  for (const def of Object.values(config.actions)) {
-    const p = def.produce ?? {};
-    if (!def.collect?.[job.outputToken]) continue;
-    if (p[job.outputToken] !== undefined) return def;
-  }
-  for (const def of Object.values(config.actions)) {
-    if (
-      def.collect?.[job.outputToken] &&
-      (!def.produce || Object.keys(def.produce).length === 0)
-    ) {
-      return def;
-    }
-  }
+): EconomyActionDefinition | undefined {
+  if (!job.sourceActionId) return undefined;
+  const d = config.actions[job.sourceActionId];
+  if (d?.collect?.[job.outputToken]) return d;
   return undefined;
 }
 
@@ -227,13 +284,14 @@ function applyProduce(
   config: PlayerEconomyConfig,
   balances: Record<string, number>,
   generating: PlayerEconomyRuntimeState["generating"],
-  produce: Record<string, GeneratorRecipeRule> | undefined,
-  collect: Record<string, CollectRule> | undefined,
+  produce: Record<string, unknown> | undefined,
+  collect: Record<string, unknown> | undefined,
   now: number,
   sourceActionId: string,
 ): { error?: string; generatorJobId?: string } {
   if (!produce) return {};
-  for (const [outputToken, rule] of Object.entries(produce)) {
+  for (const [outputToken, raw] of Object.entries(produce)) {
+    const rule = asGeneratorRecipeRule(raw);
     const outLabel = itemDisplayName(config, outputToken);
     const activeForOutput = Object.values(generating).filter(
       (p) => p.outputToken === outputToken,
@@ -255,7 +313,10 @@ function applyProduce(
       }
     }
     const id = newProducingJobId();
-    const durationMs = resolveProduceDurationMs(outputToken, rule, collect);
+    const durationMs = resolveProduceDurationMs(
+      outputToken,
+      collect as Record<string, { seconds?: unknown }> | undefined,
+    );
     generating[id] = {
       outputToken,
       startedAt: now,
@@ -306,13 +367,17 @@ function applyMint(
   config: PlayerEconomyConfig,
   balances: Record<string, number>,
   bucket: DailyMintBucket,
-  mint: Record<string, MintRule> | undefined,
+  mint: Record<string, unknown> | undefined,
   actionId: string,
   amounts: Record<string, number> | undefined,
 ): string | undefined {
   if (!mint) return undefined;
-  for (const [token, rule] of Object.entries(mint)) {
+  for (const [token, raw] of Object.entries(mint)) {
+    const rule = asMintRule(raw);
     const label = itemDisplayName(config, token);
+    if (!rule) {
+      return `Invalid mint rule for ${label}`;
+    }
     let add: number;
     if (isRangedMint(rule)) {
       const passed = amounts?.[token];
@@ -389,7 +454,7 @@ function pickWeightedCollectIndexClient(weights: number[]): number {
 function applyCollect(
   balances: Record<string, number>,
   generating: PlayerEconomyRuntimeState["generating"],
-  collect: Record<string, CollectRule> | undefined,
+  collect: Record<string, unknown> | undefined,
   itemId: string | undefined,
   now: number,
 ): { error: string } | { grants: { token: string; amount: number }[] } {
@@ -406,7 +471,12 @@ function applyCollect(
   if (now < job.completesAt) {
     return { error: "Production not complete yet" };
   }
-  const entries = Object.entries(collect);
+  const entries = Object.entries(collect)
+    .map(([k, v]): [string, CollectRule] | null => {
+      const r = asCollectRule(v);
+      return r ? [k, r] : null;
+    })
+    .filter((e): e is [string, CollectRule] => e != null);
   if (entries.length === 0) {
     return { error: "Collect is not configured for this action" };
   }
@@ -443,7 +513,7 @@ function rolloverDailyActionUsesIfNeeded(
 }
 
 function checkPurchaseLimit(
-  def: PlayerEconomyActionDefinition,
+  def: EconomyActionDefinition,
   actionId: string,
   purchaseCounts: PlayerEconomyRuntimeState["purchaseCounts"],
   itemId: string | undefined,
@@ -461,7 +531,7 @@ function checkPurchaseLimit(
 
 function incrementPurchaseCountIfNeeded(
   state: PlayerEconomyRuntimeState,
-  def: PlayerEconomyActionDefinition,
+  def: EconomyActionDefinition,
   actionId: string,
   itemId: string | undefined,
 ): void {
@@ -476,7 +546,7 @@ function incrementPurchaseCountIfNeeded(
 }
 
 function checkMaxUsesPerDay(
-  def: PlayerEconomyActionDefinition,
+  def: EconomyActionDefinition,
   actionId: string,
   dailyActionUses: PlayerEconomyRuntimeState["dailyActionUses"],
   now: number,
@@ -493,7 +563,7 @@ function checkMaxUsesPerDay(
 
 function runPhases(
   config: PlayerEconomyConfig,
-  def: PlayerEconomyActionDefinition,
+  def: EconomyActionDefinition,
   input: PlayerEconomyProcessInput,
   working: PlayerEconomyRuntimeState,
 ): {
