@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import {
   postPlayerEconomyAction,
   postPlayerEconomyGeneratorCollect,
+  submitScore,
 } from "lib/portal/api";
 import { useMinigameSession } from "lib/portal";
 import { getMinigamesApiUrl } from "lib/portal/url";
@@ -39,6 +40,10 @@ export function useChickenRescueLifecycleDispatch() {
     replacePlayerEconomy,
   } = useMinigameSession();
   const actionIds = useChickenRescueActionIds();
+
+  submitScore({ token: jwt, score: 100 }).then((res) => {
+    console.log(res);
+  });
 
   const startBasicRun = useCallback((): boolean => {
     const applied = applyChickenRescueStartBasic(playerEconomy);
@@ -91,7 +96,7 @@ export function useChickenRescueLifecycleDispatch() {
           actions,
           playerEconomy,
           { actionId: id },
-          economyMeta?.items,
+          economyMeta?.items
         );
         if (!first.ok || !first.generatorJobId) {
           throw new Error("Could not start free worms (offline)");
@@ -102,7 +107,9 @@ export function useChickenRescueLifecycleDispatch() {
         ]);
         if (!seq.ok) {
           throw new Error(
-            "error" in seq ? seq.error : "Could not collect free worms (offline)",
+            "error" in seq
+              ? seq.error
+              : "Could not collect free worms (offline)"
           );
         }
         markFreeWormsClaimedForUtcDay();
@@ -112,10 +119,7 @@ export function useChickenRescueLifecycleDispatch() {
       const rollback = cloneMinigameSnapshot(playerEconomy);
       try {
         const r1 = await postPlayerEconomyAction({ token, action: id });
-        const after1 = mergeMinigameEconomyFromApi(
-          rollback,
-          r1.playerEconomy,
-        );
+        const after1 = mergeMinigameEconomyFromApi(rollback, r1.playerEconomy);
         let jobId = r1.generatorJobId;
         if (!jobId) {
           const keys = Object.keys(after1.generating ?? {});
@@ -127,8 +131,8 @@ export function useChickenRescueLifecycleDispatch() {
         const r2 = await postPlayerEconomyGeneratorCollect({ token, jobId });
         replacePlayerEconomy(
           normalizeMinigameFromApi(
-            mergeMinigameEconomyFromApi(after1, r2.playerEconomy),
-          ),
+            mergeMinigameEconomyFromApi(after1, r2.playerEconomy)
+          )
         );
         markFreeWormsClaimedForUtcDay();
       } catch (e) {
@@ -142,11 +146,11 @@ export function useChickenRescueLifecycleDispatch() {
       actions,
       playerEconomy,
       { actionId: id },
-      economyMeta?.items,
+      economyMeta?.items
     );
     if (!started.ok) {
       throw new Error(
-        "error" in started ? started.error : "Could not start worm production",
+        "error" in started ? started.error : "Could not start worm production"
       );
     }
     const ok = commitLocalPlayerEconomySync({
@@ -174,38 +178,54 @@ export function useChickenRescueLifecycleDispatch() {
       score: number;
       goldenCount: number;
     }): boolean => {
+      const postCompletedChooksScore = (completedChooks: number) => {
+        const api = getMinigamesApiUrl();
+        const token = jwt?.trim();
+        if (!api || !token) {
+          return;
+        }
+        void submitScore({ token, score: completedChooks }).catch(() => {
+          /* best-effort; game over already committed locally */
+        });
+      };
+
       const isAdvanced = input.runType === "advanced";
       if (isAdvanced) {
         const applied = applyChickenRescueGameOverAdvanced(
           playerEconomy,
-          input.goldenCount,
+          input.goldenCount
         );
         if (!applied.ok) {
           return false;
         }
-        return commitLocalPlayerEconomySync({
+        commitLocalPlayerEconomySync({
           action: actionIds.gameOverAdvanced,
           amounts: { "2": input.goldenCount },
           nextPlayerEconomy: applied.playerEconomy,
         });
+        postCompletedChooksScore(input.goldenCount);
+        return true;
       }
       const chooks = chooksForScore(input.score);
       const applied = applyChickenRescueGameOverBasic(playerEconomy, chooks);
       if (!applied.ok) {
         return false;
       }
-      return commitLocalPlayerEconomySync({
+      commitLocalPlayerEconomySync({
         action: actionIds.gameOverBasic,
         amounts: { "1": chooks },
         nextPlayerEconomy: applied.playerEconomy,
       });
+      postCompletedChooksScore(chooks);
+      return true;
     },
     [
       actionIds.gameOverAdvanced,
       actionIds.gameOverBasic,
       commitLocalPlayerEconomySync,
+      jwt,
       playerEconomy,
-    ],
+    ]
   );
 
   return { startBasicRun, startAdvancedRun, endRun, claimFreeWorms };

@@ -124,3 +124,15 @@ export async function postPlayerEconomyAction(params: {
     ...(params.amounts !== undefined ? { amounts: params.amounts } : {}),
   });
 }
+
+/** Minigames `POST /action` with `type: "score.submitted"` and integer `score` ≥ 0. */
+export async function submitScore(params: {
+  token: string;
+  score: number;
+}): Promise<MinigameActionResponse> {
+  const score = Math.max(0, Math.floor(params.score));
+  return postMinigameEconomyActionRequest(params.token, {
+    type: "score.submitted",
+    score,
+  });
+}

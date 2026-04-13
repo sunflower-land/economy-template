@@ -11,5 +11,5 @@ import { TileJumpApp } from "examples/tileJump/TileJumpApp";
  * `examples/tileJump/TileJumpApp`, or another example from `src/examples/`.
  */
 export const App: React.FC = () => {
-  return <TileJumpApp />;
+  return <ChickenRescueApp />;
 };
