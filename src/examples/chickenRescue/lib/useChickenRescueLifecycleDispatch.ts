@@ -41,10 +41,6 @@ export function useChickenRescueLifecycleDispatch() {
   } = useMinigameSession();
   const actionIds = useChickenRescueActionIds();
 
-  submitScore({ token: jwt, score: 100 }).then((res) => {
-    console.log(res);
-  });
-
   const startBasicRun = useCallback((): boolean => {
     const applied = applyChickenRescueStartBasic(playerEconomy);
     if (!applied.ok) {

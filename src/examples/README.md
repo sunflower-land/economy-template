@@ -15,4 +15,4 @@ Minimal **portal** demo (if included in your fork): **`BoringApp`**.
 
 Player-economy **dashboard** minigame (shop, generators, inventory) driven by the Minigames session payload (`actions` plus optional `items`, `descriptions`, `visualTheme`, …). Mount **`UiResourcesApp`** from **`App.tsx`** to try it. Without **`VITE_MINIGAMES_API_URL`**, **`UiResourcesApp`** uses a small offline stub (`lib/localOfflineStub.ts`).
 
-**Editor-ready JSON (single object):** copy or upload [`ui-resources/ui-resources-editor-sample.json`](./ui-resources/ui-resources-editor-sample.json) into the portal editor JSON tab, then Save.
+**Editor sample JSON:** [`ui-resources/ui-resources-editor-sample.json`](./ui-resources/ui-resources-editor-sample.json) matches the economy config shape (useful as a reference or for tooling; the in-game editor is form-based).
