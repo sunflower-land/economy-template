@@ -98,6 +98,34 @@ export const minigames: ArcadeMinigame[] = [
     tokenReward: 50,
     status: "available",
   },
+  {
+    id: "chicken-rescue",
+    name: "Chicken Rescue (Playable Demo)",
+    description: "Playable economy minigame from repository examples.",
+    tokenReward: 60,
+    status: "available",
+  },
+  {
+    id: "golden-crops",
+    name: "Golden Crops (Playable Demo)",
+    description: "Playable farming minigame from repository examples.",
+    tokenReward: 60,
+    status: "available",
+  },
+  {
+    id: "plaza-party",
+    name: "Plaza Party (Playable Demo)",
+    description: "Playable plaza exploration minigame from repository examples.",
+    tokenReward: 60,
+    status: "available",
+  },
+  {
+    id: "ui-resources",
+    name: "UI Resources (Playable Demo)",
+    description: "Playable economy dashboard demo from repository examples.",
+    tokenReward: 40,
+    status: "available",
+  },
 ];
 
 export const prizes: ArcadePrize[] = [

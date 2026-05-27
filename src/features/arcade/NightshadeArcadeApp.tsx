@@ -4,6 +4,10 @@ import ravenCoinIcon from "./assets/RavenCoin.webp";
 import ticketIcon from "./assets/nightshade_ticket.webp";
 import { TileJumpApp } from "examples/tileJump/TileJumpApp";
 import { HideAndSeekApp } from "examples/hideAndSeek/HideAndSeekApp";
+import { ChickenRescueApp } from "examples/chickenRescue/ChickenRescue";
+import { GoldenCropsApp } from "examples/goldenCrops/GoldenCropsApp";
+import { PlazaPartyApp } from "examples/plazaParty/PlazaPartyApp";
+import { UiResourcesApp } from "examples/ui-resources/UiResourcesApp";
 import { BlackjackGame } from "./games/blackjack/BlackjackGame";
 import { GoFishGame } from "./games/gofish/GoFishGame";
 import { UnoGame } from "./games/uno/UnoGame";
@@ -74,6 +78,66 @@ export const NightshadeArcadeApp: React.FC = () => {
           ← Back to Arcade
         </button>
         <HideAndSeekApp />
+      </>
+    );
+  }
+
+  if (activePlayableGame === "chicken-rescue") {
+    return (
+      <>
+        <button
+          className="fixed left-2 top-2 z-50 rounded bg-[#3e2731] px-3 py-1 text-xs text-white"
+          onClick={() => setActivePlayableGame(null)}
+          type="button"
+        >
+          ← Back to Arcade
+        </button>
+        <ChickenRescueApp />
+      </>
+    );
+  }
+
+  if (activePlayableGame === "golden-crops") {
+    return (
+      <>
+        <button
+          className="fixed left-2 top-2 z-50 rounded bg-[#3e2731] px-3 py-1 text-xs text-white"
+          onClick={() => setActivePlayableGame(null)}
+          type="button"
+        >
+          ← Back to Arcade
+        </button>
+        <GoldenCropsApp />
+      </>
+    );
+  }
+
+  if (activePlayableGame === "plaza-party") {
+    return (
+      <>
+        <button
+          className="fixed left-2 top-2 z-50 rounded bg-[#3e2731] px-3 py-1 text-xs text-white"
+          onClick={() => setActivePlayableGame(null)}
+          type="button"
+        >
+          ← Back to Arcade
+        </button>
+        <PlazaPartyApp />
+      </>
+    );
+  }
+
+  if (activePlayableGame === "ui-resources") {
+    return (
+      <>
+        <button
+          className="fixed left-2 top-2 z-50 rounded bg-[#3e2731] px-3 py-1 text-xs text-white"
+          onClick={() => setActivePlayableGame(null)}
+          type="button"
+        >
+          ← Back to Arcade
+        </button>
+        <UiResourcesApp />
       </>
     );
   }
