@@ -4,6 +4,11 @@ import ravenCoinIcon from "./assets/RavenCoin.webp";
 import ticketIcon from "./assets/nightshade_ticket.webp";
 import { TileJumpApp } from "examples/tileJump/TileJumpApp";
 import { HideAndSeekApp } from "examples/hideAndSeek/HideAndSeekApp";
+import { BlackjackGame } from "./games/blackjack/BlackjackGame";
+import { GoFishGame } from "./games/gofish/GoFishGame";
+import { UnoGame } from "./games/uno/UnoGame";
+import { SolitaireGame } from "./games/solitaire/SolitaireGame";
+import { PokerGame } from "./games/poker/PokerGame";
 
 const cardClass = "rounded border border-[#3e2731] bg-[#f9f4e7] p-2 text-[#3e2731]";
 
@@ -72,6 +77,72 @@ export const NightshadeArcadeApp: React.FC = () => {
       </>
     );
   }
+
+  if (activePlayableGame === "blackjack") {
+    return (
+      <BlackjackGame
+        onBack={() => setActivePlayableGame(null)}
+        onWin={(tokens) => {
+          setTokenBalance((b) => b + tokens);
+          setStatusMessage(`+${tokens} Raven Coins from Blackjack!`);
+        }}
+        tokenReward={minigames.find((g) => g.id === "blackjack")?.tokenReward ?? 100}
+      />
+    );
+  }
+
+  if (activePlayableGame === "gofish") {
+    return (
+      <GoFishGame
+        onBack={() => setActivePlayableGame(null)}
+        onWin={(tokens) => {
+          setTokenBalance((b) => b + tokens);
+          setStatusMessage(`+${tokens} Raven Coins from Go Fish!`);
+        }}
+        tokenReward={minigames.find((g) => g.id === "gofish")?.tokenReward ?? 75}
+      />
+    );
+  }
+
+  if (activePlayableGame === "uno") {
+    return (
+      <UnoGame
+        onBack={() => setActivePlayableGame(null)}
+        onWin={(tokens) => {
+          setTokenBalance((b) => b + tokens);
+          setStatusMessage(`+${tokens} Raven Coins from Uno!`);
+        }}
+        tokenReward={minigames.find((g) => g.id === "uno")?.tokenReward ?? 90}
+      />
+    );
+  }
+
+  if (activePlayableGame === "solitaire") {
+    return (
+      <SolitaireGame
+        onBack={() => setActivePlayableGame(null)}
+        onWin={(tokens) => {
+          setTokenBalance((b) => b + tokens);
+          setStatusMessage(`+${tokens} Raven Coins from Solitaire!`);
+        }}
+        tokenReward={minigames.find((g) => g.id === "solitaire")?.tokenReward ?? 70}
+      />
+    );
+  }
+
+  if (activePlayableGame === "poker") {
+    return (
+      <PokerGame
+        onBack={() => setActivePlayableGame(null)}
+        onWin={(tokens) => {
+          setTokenBalance((b) => b + tokens);
+          setStatusMessage(`+${tokens} Raven Coins from Poker!`);
+        }}
+        tokenReward={minigames.find((g) => g.id === "poker")?.tokenReward ?? 100}
+      />
+    );
+  }
+
 
   return (
     <div className="min-h-screen bg-[#1b1725] p-3 text-[#f4f4f4]">
