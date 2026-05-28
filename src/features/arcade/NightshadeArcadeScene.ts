@@ -142,6 +142,14 @@ export class NightshadeArcadeScene extends BaseScene {
       this.layers[layerData.name] = layer as Phaser.Tilemaps.TilemapLayer;
     });
 
+    // Set physics world bounds to match the tilemap dimensions
+    this.physics.world.setBounds(
+      0,
+      0,
+      this.map.width * 16,
+      this.map.height * 16,
+    );
+
     this.triggerColliders = this.add.group();
 
     if (!this.map.getObjectLayer("Trigger")) return;
@@ -181,7 +189,7 @@ export class NightshadeArcadeScene extends BaseScene {
       // Ignore if no pipelines exist
     }
 
-    this.cameras.main.setBackgroundColor("#ffffff");
+    this.cameras.main.setBackgroundColor("#130b1f");
 
     const _stairs = this.add.image(440, 47, "stairs");
 
