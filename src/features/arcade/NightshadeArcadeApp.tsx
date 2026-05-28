@@ -36,6 +36,12 @@ export const NightshadeArcadeApp: React.FC = () => {
     () => getGameEntry(selectedGameId) ?? GAME_REGISTRY[0],
     [selectedGameId],
   );
+  const activeEntry = useMemo(
+    () => (activeGameId ? getGameEntry(activeGameId) : undefined),
+    [activeGameId],
+  );
+  const ActiveGameComponent = activeEntry?.component;
+  const hasInvalidActiveGame = Boolean(activeGameId && !ActiveGameComponent);
 
   const handleBack = () => setActiveGameId(null);
 
@@ -64,26 +70,18 @@ export const NightshadeArcadeApp: React.FC = () => {
   };
 
   // ── Active game rendering ─────────────────────────────────────────────────
-  if (activeGameId) {
-    const entry = getGameEntry(activeGameId);
-    const Component = entry?.component;
-
-    if (!Component) {
-      // Fallback: unknown id — return to hub
-      setActiveGameId(null);
-      return null;
-    }
+  if (activeEntry && ActiveGameComponent) {
 
     // Arcade card games own their back button via onBack prop
     const isLocalGame =
-      entry.backingType === "local" || entry.backingType === "scaffolded";
+      activeEntry.backingType === "local" || activeEntry.backingType === "scaffolded";
 
     if (isLocalGame) {
       return (
-        <Component
+        <ActiveGameComponent
           onBack={handleBack}
-          onWin={(tokens) => handleWin(tokens, entry.name)}
-          tokenReward={entry.tokenReward}
+          onWin={(tokens) => handleWin(tokens, activeEntry.name)}
+          tokenReward={activeEntry.tokenReward}
         />
       );
     }
@@ -92,10 +90,10 @@ export const NightshadeArcadeApp: React.FC = () => {
     return (
       <>
         <DemoBackButton onClick={handleBack} />
-        <Component
+        <ActiveGameComponent
           onBack={handleBack}
-          onWin={(tokens) => handleWin(tokens, entry.name)}
-          tokenReward={entry.tokenReward}
+          onWin={(tokens) => handleWin(tokens, activeEntry.name)}
+          tokenReward={activeEntry.tokenReward}
         />
       </>
     );
@@ -121,7 +119,9 @@ export const NightshadeArcadeApp: React.FC = () => {
             </span>
           </div>
           <div className="mt-2 rounded bg-[#f09100] px-2 py-1 text-xs text-[#3e2731]">
-            {statusMessage}
+            {hasInvalidActiveGame
+              ? `Selected game "${activeGameId}" is unavailable. Please choose another game from the hub.`
+              : statusMessage}
           </div>
         </section>
 

@@ -22,6 +22,7 @@ npm run dev
 - **Arcade shell:** `src/features/arcade/NightshadeArcadeApp.tsx`
 - **Hub config:** `src/features/arcade/data/hubConfig.ts`
 - **Portal migration placeholders:** `src/features/arcade/portal/portingPlan.ts`
+- **Arcade migration handoff (canonical):** `docs/arcade-migration-handoff.txt`
 
 ## Next migration step
 

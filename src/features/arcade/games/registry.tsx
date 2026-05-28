@@ -36,7 +36,7 @@ function wrapDemo(App: ComponentType): ComponentType<ArcadeGameProps> {
  * backingType "scaffolded" → non-broken placeholder; full implementation pending
  * backingType "portal"     → reserved for future hosted-portal integration
  *
- * ── Checklist sync (from Migration-plan.txt) ────────────────────────────────
+ * ── Checklist sync (from docs/arcade-migration-handoff.txt) ────────────────
  * [x] Poker              — local, available
  * [x] Blackjack          — local, available
  * [x] Go Fish            — local, available

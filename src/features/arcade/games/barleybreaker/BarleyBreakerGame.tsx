@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { ArcadeGameShell } from "../../components/ArcadeGameShell";
 import type { ArcadeGameProps } from "../../types";
 
@@ -102,10 +102,11 @@ export const BarleyBreakerGame: React.FC<ArcadeGameProps> = ({
     [grid, won, moves],
   );
 
-  if (won && !wonReported) {
+  useEffect(() => {
+    if (!won || wonReported) return;
     setWonReported(true);
     onWin(tokenReward);
-  }
+  }, [won, wonReported, onWin, tokenReward]);
 
   if (!grid) {
     return (
