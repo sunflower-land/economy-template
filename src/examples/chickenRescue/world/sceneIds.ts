@@ -17,4 +17,5 @@ export type SceneId =
   | "sunflorian_house"
   | "nightshade_house"
   | "bumpkin_house"
-  | "portal_example";
+  | "portal_example"
+  | "nightshade-arcade";

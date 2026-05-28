@@ -1,5 +1,8 @@
 import type { ComponentType } from "react";
 
+/** x/y coordinate pair used by spawn helpers */
+export type Coordinates = { x: number; y: number };
+
 /** Props passed to every local arcade game component */
 export interface ArcadeGameProps {
   onBack: () => void;
