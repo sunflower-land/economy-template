@@ -32,11 +32,12 @@ function wrapDemo(App: ComponentType): ComponentType<ArcadeGameProps> {
  * Central arcade game registry.
  *
  * ── Implementation status key ───────────────────────────────────────────────
- * backingType "local"      → fully playable React-native game component
- * backingType "scaffolded" → non-broken placeholder; full implementation pending
+ * backingType "local"      → fully playable React-native game component (owns back button via onBack)
+ * backingType "scaffolded" → non-broken placeholder (owns back button via onBack)
+ * backingType "demo"       → pre-existing example app wrapped with wrapDemo(); hub injects back button overlay
  * backingType "portal"     → reserved for future hosted-portal integration
  *
- * ── Checklist sync (from Migration-plan.txt) ────────────────────────────────
+ * ── Checklist sync (from docs/arcade-migration-handoff.txt) ────────────────
  * [x] Poker              — local, available
  * [x] Blackjack          — local, available
  * [x] Go Fish            — local, available
@@ -48,12 +49,12 @@ function wrapDemo(App: ComponentType): ComponentType<ArcadeGameProps> {
  * [ ] Pac-Man            — scaffolded        (source unverified; TODO implement)
  * [ ] Frogger            — scaffolded        (source unverified; TODO implement)
  * ── Demo entries (pre-existing, not part of the migration checklist) ─────────
- * [x] Tile Jump          — local demo
- * [x] Hide & Seek        — local demo
- * [x] Chicken Rescue     — local demo
- * [x] Golden Crops       — local demo
- * [x] Plaza Party        — local demo
- * [x] UI Resources       — local demo
+ * [x] Tile Jump          — demo
+ * [x] Hide & Seek        — demo
+ * [x] Chicken Rescue     — demo
+ * [x] Golden Crops       — demo
+ * [x] Plaza Party        — demo
+ * [x] UI Resources       — demo
  */
 export const GAME_REGISTRY: ArcadeGameEntry[] = [
   // ── Migration checklist: completed ─────────────────────────────────────────
@@ -168,7 +169,7 @@ export const GAME_REGISTRY: ArcadeGameEntry[] = [
     description: "Playable minigame already wired in this repo.",
     tokenReward: 50,
     status: "available",
-    backingType: "local",
+    backingType: "demo",
     component: wrapDemo(TileJumpApp),
   },
   {
@@ -177,7 +178,7 @@ export const GAME_REGISTRY: ArcadeGameEntry[] = [
     description: "Playable MMO-style minigame demo.",
     tokenReward: 50,
     status: "available",
-    backingType: "local",
+    backingType: "demo",
     component: wrapDemo(HideAndSeekApp),
   },
   {
@@ -186,7 +187,7 @@ export const GAME_REGISTRY: ArcadeGameEntry[] = [
     description: "Playable economy minigame from repository examples.",
     tokenReward: 60,
     status: "available",
-    backingType: "local",
+    backingType: "demo",
     component: wrapDemo(ChickenRescueApp),
   },
   {
@@ -195,7 +196,7 @@ export const GAME_REGISTRY: ArcadeGameEntry[] = [
     description: "Playable farming minigame from repository examples.",
     tokenReward: 60,
     status: "available",
-    backingType: "local",
+    backingType: "demo",
     component: wrapDemo(GoldenCropsApp),
   },
   {
@@ -204,7 +205,7 @@ export const GAME_REGISTRY: ArcadeGameEntry[] = [
     description: "Playable plaza exploration minigame from repository examples.",
     tokenReward: 60,
     status: "available",
-    backingType: "local",
+    backingType: "demo",
     component: wrapDemo(PlazaPartyApp),
   },
   {
@@ -213,7 +214,7 @@ export const GAME_REGISTRY: ArcadeGameEntry[] = [
     description: "Playable economy dashboard demo from repository examples.",
     tokenReward: 40,
     status: "available",
-    backingType: "local",
+    backingType: "demo",
     component: wrapDemo(UiResourcesApp),
   },
 ];

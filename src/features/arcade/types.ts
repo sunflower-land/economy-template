@@ -10,8 +10,14 @@ export interface ArcadeGameProps {
   tokenReward: number;
 }
 
-/** Implementation backing strategy */
-export type ArcadeBackingType = "local" | "portal" | "scaffolded";
+/**
+ * Implementation backing strategy.
+ * - "local"      → fully playable React-native game; owns its own back button via onBack prop
+ * - "scaffolded" → non-broken placeholder; owns its own back button via onBack prop
+ * - "demo"       → pre-existing example app wrapped with wrapDemo(); back nav injected at hub level
+ * - "portal"     → reserved for future hosted-portal integration
+ */
+export type ArcadeBackingType = "local" | "portal" | "scaffolded" | "demo";
 
 /**
  * Progression status used by the hub.
