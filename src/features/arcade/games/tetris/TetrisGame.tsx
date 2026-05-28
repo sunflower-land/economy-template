@@ -13,7 +13,8 @@ import type { ArcadeGameProps } from "../../types";
  * verified during the research handoff, so this is a clean local build.
  *
  * Controls: ← → move | ↑ / Z rotate | ↓ soft drop | Space hard drop
- * Win condition: clear 5 or more lines to earn Raven Coins.
+ * Win condition: clear 5 or more lines in a run to earn Raven Coins when the
+ * run ends.
  */
 
 const BOARD_WIDTH = 10;
@@ -214,6 +215,12 @@ export const TetrisGame: React.FC<ArcadeGameProps> = ({
     return () => clearInterval(id);
   }, [state?.gameOver, tick]);
 
+  useEffect(() => {
+    if (!state?.gameOver || state.lines < LINES_TO_WIN || wonReported) return;
+    setWonReported(true);
+    onWin(tokenReward);
+  }, [state?.gameOver, state?.lines, wonReported, onWin, tokenReward]);
+
   const moveLeft = useCallback(() => {
     setState((prev) => {
       if (!prev || prev.gameOver) return prev;
@@ -273,16 +280,12 @@ export const TetrisGame: React.FC<ArcadeGameProps> = ({
     return () => window.removeEventListener("keydown", handler);
   }, [moveLeft, moveRight, tick, rotate, hardDrop]);
 
-  if (state?.gameOver && state.lines >= LINES_TO_WIN && !wonReported) {
-    setWonReported(true);
-    onWin(tokenReward);
-  }
-
   if (!state) {
     return (
       <ArcadeGameShell title="Tetris" onBack={onBack}>
         <p className="text-sm opacity-80 text-center max-w-xs mx-auto">
-          Clear falling blocks to score. Clear {LINES_TO_WIN}+ lines to earn Raven Coins!
+          Clear falling blocks to score. Reach {LINES_TO_WIN}+ lines, then finish
+          the run to earn Raven Coins.
           <br />
           <span className="opacity-60 text-xs">
             ← → move · ↑ / Z rotate · ↓ soft drop · Space hard drop
@@ -413,7 +416,7 @@ export const TetrisGame: React.FC<ArcadeGameProps> = ({
               )}
               {state.lines < LINES_TO_WIN && (
                 <div className="text-xs opacity-60">
-                  Clear {LINES_TO_WIN} lines to win coins.
+                  Clear {LINES_TO_WIN}+ lines this run to earn coins at game over.
                 </div>
               )}
               <button

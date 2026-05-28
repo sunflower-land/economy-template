@@ -271,10 +271,11 @@ export const GoblinInvadersGame: React.FC<ArcadeGameProps> = ({
     return () => clearInterval(id);
   }, [gameState?.gameOver, gameState?.won]);
 
-  if (gameState?.won && !wonReported) {
+  useEffect(() => {
+    if (!gameState?.won || wonReported) return;
     setWonReported(true);
     onWin(tokenReward);
-  }
+  }, [gameState?.won, wonReported, onWin, tokenReward]);
 
   if (!gameState) {
     return (
