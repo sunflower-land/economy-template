@@ -9,6 +9,8 @@ export type SpawnLocation = Record<
 
 const randomXOffset = Math.random() * 60;
 const randomYOffset = Math.random() * 20;
+const nightshadeArcadeRandomXOffset = Math.random() * 49;
+const nightshadeArcadeRandomYOffset = Math.random() * 20;
 
 export const SPAWNS: () => SpawnLocation = () => ({
   chicken_rescue: {
@@ -39,6 +41,12 @@ export const SPAWNS: () => SpawnLocation = () => ({
     default: {
       x: 240,
       y: 432,
+    },
+  },
+  "nightshade-arcade": {
+    default: {
+      x: 214 + nightshadeArcadeRandomXOffset,
+      y: 450 + nightshadeArcadeRandomYOffset,
     },
   },
   bumpkin_house: {
