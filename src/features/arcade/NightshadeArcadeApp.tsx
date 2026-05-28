@@ -1,42 +1,54 @@
 import React, { useMemo, useState } from "react";
-import { minigames, prizes } from "./data/hubConfig";
+import { prizes } from "./data/hubConfig";
+import { GAME_REGISTRY, getGameEntry } from "./games/registry";
 import ravenCoinIcon from "./assets/RavenCoin.webp";
 import ticketIcon from "./assets/nightshade_ticket.webp";
-import { TileJumpApp } from "examples/tileJump/TileJumpApp";
-import { HideAndSeekApp } from "examples/hideAndSeek/HideAndSeekApp";
-import { ChickenRescueApp } from "examples/chickenRescue/ChickenRescue";
-import { GoldenCropsApp } from "examples/goldenCrops/GoldenCropsApp";
-import { PlazaPartyApp } from "examples/plazaParty/PlazaPartyApp";
-import { UiResourcesApp } from "examples/ui-resources/UiResourcesApp";
-import { BlackjackGame } from "./games/blackjack/BlackjackGame";
-import { GoFishGame } from "./games/gofish/GoFishGame";
-import { UnoGame } from "./games/uno/UnoGame";
-import { SolitaireGame } from "./games/solitaire/SolitaireGame";
-import { PokerGame } from "./games/poker/PokerGame";
 
 const cardClass = "rounded border border-[#3e2731] bg-[#f9f4e7] p-2 text-[#3e2731]";
 
+/** Label shown in the hub game list for each status */
+const STATUS_LABEL: Record<string, string> = {
+  available: "Playable",
+  scaffolded: "Scaffolded",
+  "coming-soon": "Coming Soon",
+};
+
+/** Back button rendered on top of demo apps that don't own their own back nav */
+const DemoBackButton: React.FC<{ onClick: () => void }> = ({ onClick }) => (
+  <button
+    className="fixed left-2 top-2 z-50 rounded bg-[#3e2731] px-3 py-1 text-xs text-white"
+    onClick={onClick}
+    type="button"
+  >
+    ← Back to Arcade
+  </button>
+);
+
 export const NightshadeArcadeApp: React.FC = () => {
   const [tokenBalance, setTokenBalance] = useState(0);
-  const [selectedGame, setSelectedGame] = useState(minigames[0]?.id ?? "");
-  const [activePlayableGame, setActivePlayableGame] = useState<string | null>(
-    null,
-  );
+  const [selectedGameId, setSelectedGameId] = useState(GAME_REGISTRY[0]?.id ?? "");
+  const [activeGameId, setActiveGameId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState(
     "Nightshade Arcade portal catalog imported. Select a game to preview rewards.",
   );
 
-  const activeGame = useMemo(
-    () => minigames.find((game) => game.id === selectedGame) ?? minigames[0],
-    [selectedGame],
+  const selectedEntry = useMemo(
+    () => getGameEntry(selectedGameId) ?? GAME_REGISTRY[0],
+    [selectedGameId],
   );
 
-  const rewardPreview = () => {
-    if (!activeGame) return;
+  const handleBack = () => setActiveGameId(null);
 
-    setTokenBalance((current) => current + activeGame.tokenReward);
+  const handleWin = (tokens: number, gameName: string) => {
+    setTokenBalance((b) => b + tokens);
+    setStatusMessage(`+${tokens} Raven Coins from ${gameName}!`);
+  };
+
+  const rewardPreview = () => {
+    if (!selectedEntry) return;
+    setTokenBalance((b) => b + selectedEntry.tokenReward);
     setStatusMessage(
-      `Reward simulated: +${activeGame.tokenReward} Raven Coins from ${activeGame.name}.`,
+      `Reward simulated: +${selectedEntry.tokenReward} Raven Coins from ${selectedEntry.name}.`,
     );
   };
 
@@ -47,167 +59,49 @@ export const NightshadeArcadeApp: React.FC = () => {
       );
       return;
     }
-
-    setTokenBalance((current) => current - tokenCost);
+    setTokenBalance((b) => b - tokenCost);
     setStatusMessage(`Redeemed ${prizeName}. Fulfillment flow will be connected next.`);
   };
 
-  if (activePlayableGame === "tile-jump") {
+  // ── Active game rendering ─────────────────────────────────────────────────
+  if (activeGameId) {
+    const entry = getGameEntry(activeGameId);
+    const Component = entry?.component;
+
+    if (!Component) {
+      // Fallback: unknown id — return to hub
+      setActiveGameId(null);
+      return null;
+    }
+
+    // Arcade card games own their back button via onBack prop
+    const isLocalGame =
+      entry.backingType === "local" || entry.backingType === "scaffolded";
+
+    if (isLocalGame) {
+      return (
+        <Component
+          onBack={handleBack}
+          onWin={(tokens) => handleWin(tokens, entry.name)}
+          tokenReward={entry.tokenReward}
+        />
+      );
+    }
+
+    // Demo wrapper apps do not accept ArcadeGameProps — render with overlay back button
     return (
       <>
-        <button
-          className="fixed left-2 top-2 z-50 rounded bg-[#3e2731] px-3 py-1 text-xs text-white"
-          onClick={() => setActivePlayableGame(null)}
-          type="button"
-        >
-          ← Back to Arcade
-        </button>
-        <TileJumpApp />
+        <DemoBackButton onClick={handleBack} />
+        <Component
+          onBack={handleBack}
+          onWin={(tokens) => handleWin(tokens, entry.name)}
+          tokenReward={entry.tokenReward}
+        />
       </>
     );
   }
 
-  if (activePlayableGame === "hide-and-seek") {
-    return (
-      <>
-        <button
-          className="fixed left-2 top-2 z-50 rounded bg-[#3e2731] px-3 py-1 text-xs text-white"
-          onClick={() => setActivePlayableGame(null)}
-          type="button"
-        >
-          ← Back to Arcade
-        </button>
-        <HideAndSeekApp />
-      </>
-    );
-  }
-
-  if (activePlayableGame === "chicken-rescue") {
-    return (
-      <>
-        <button
-          className="fixed left-2 top-2 z-50 rounded bg-[#3e2731] px-3 py-1 text-xs text-white"
-          onClick={() => setActivePlayableGame(null)}
-          type="button"
-        >
-          ← Back to Arcade
-        </button>
-        <ChickenRescueApp />
-      </>
-    );
-  }
-
-  if (activePlayableGame === "golden-crops") {
-    return (
-      <>
-        <button
-          className="fixed left-2 top-2 z-50 rounded bg-[#3e2731] px-3 py-1 text-xs text-white"
-          onClick={() => setActivePlayableGame(null)}
-          type="button"
-        >
-          ← Back to Arcade
-        </button>
-        <GoldenCropsApp />
-      </>
-    );
-  }
-
-  if (activePlayableGame === "plaza-party") {
-    return (
-      <>
-        <button
-          className="fixed left-2 top-2 z-50 rounded bg-[#3e2731] px-3 py-1 text-xs text-white"
-          onClick={() => setActivePlayableGame(null)}
-          type="button"
-        >
-          ← Back to Arcade
-        </button>
-        <PlazaPartyApp />
-      </>
-    );
-  }
-
-  if (activePlayableGame === "ui-resources") {
-    return (
-      <>
-        <button
-          className="fixed left-2 top-2 z-50 rounded bg-[#3e2731] px-3 py-1 text-xs text-white"
-          onClick={() => setActivePlayableGame(null)}
-          type="button"
-        >
-          ← Back to Arcade
-        </button>
-        <UiResourcesApp />
-      </>
-    );
-  }
-
-  if (activePlayableGame === "blackjack") {
-    return (
-      <BlackjackGame
-        onBack={() => setActivePlayableGame(null)}
-        onWin={(tokens) => {
-          setTokenBalance((b) => b + tokens);
-          setStatusMessage(`+${tokens} Raven Coins from Blackjack!`);
-        }}
-        tokenReward={minigames.find((g) => g.id === "blackjack")?.tokenReward ?? 100}
-      />
-    );
-  }
-
-  if (activePlayableGame === "gofish") {
-    return (
-      <GoFishGame
-        onBack={() => setActivePlayableGame(null)}
-        onWin={(tokens) => {
-          setTokenBalance((b) => b + tokens);
-          setStatusMessage(`+${tokens} Raven Coins from Go Fish!`);
-        }}
-        tokenReward={minigames.find((g) => g.id === "gofish")?.tokenReward ?? 75}
-      />
-    );
-  }
-
-  if (activePlayableGame === "uno") {
-    return (
-      <UnoGame
-        onBack={() => setActivePlayableGame(null)}
-        onWin={(tokens) => {
-          setTokenBalance((b) => b + tokens);
-          setStatusMessage(`+${tokens} Raven Coins from Uno!`);
-        }}
-        tokenReward={minigames.find((g) => g.id === "uno")?.tokenReward ?? 90}
-      />
-    );
-  }
-
-  if (activePlayableGame === "solitaire") {
-    return (
-      <SolitaireGame
-        onBack={() => setActivePlayableGame(null)}
-        onWin={(tokens) => {
-          setTokenBalance((b) => b + tokens);
-          setStatusMessage(`+${tokens} Raven Coins from Solitaire!`);
-        }}
-        tokenReward={minigames.find((g) => g.id === "solitaire")?.tokenReward ?? 70}
-      />
-    );
-  }
-
-  if (activePlayableGame === "poker") {
-    return (
-      <PokerGame
-        onBack={() => setActivePlayableGame(null)}
-        onWin={(tokens) => {
-          setTokenBalance((b) => b + tokens);
-          setStatusMessage(`+${tokens} Raven Coins from Poker!`);
-        }}
-        tokenReward={minigames.find((g) => g.id === "poker")?.tokenReward ?? 100}
-      />
-    );
-  }
-
-
+  // ── Hub view ──────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#1b1725] p-3 text-[#f4f4f4]">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-3">
@@ -235,17 +129,18 @@ export const NightshadeArcadeApp: React.FC = () => {
           <section className={cardClass}>
             <h2 className="m-0 text-sm">Minigame Hub</h2>
             <div className="mt-2 flex flex-col gap-2">
-              {minigames.map((game) => (
+              {GAME_REGISTRY.map((game) => (
                 <button
                   key={game.id}
                   className="flex w-full cursor-pointer flex-col gap-1 rounded border border-[#3e2731] bg-white px-2 py-1 text-left hover:brightness-95"
-                  onClick={() => setSelectedGame(game.id)}
+                  onClick={() => setSelectedGameId(game.id)}
                   type="button"
                 >
                   <strong className="text-xs">{game.name}</strong>
                   <span className="text-xs">{game.description}</span>
                   <span className="text-xs">
-                    Reward: +{game.tokenReward} Raven Coins · Status: {game.status}
+                    Reward: +{game.tokenReward} Raven Coins · Status:{" "}
+                    {STATUS_LABEL[game.status] ?? game.status}
                   </span>
                 </button>
               ))}
@@ -258,13 +153,13 @@ export const NightshadeArcadeApp: React.FC = () => {
               >
                 Simulate completion
               </button>
-              {activeGame?.status === "available" && (
+              {(selectedEntry?.status === "available" || selectedEntry?.status === "scaffolded") && (
                 <button
                   className="rounded bg-[#3e8948] px-3 py-2 text-xs text-white hover:brightness-95"
-                  onClick={() => setActivePlayableGame(activeGame.id)}
+                  onClick={() => selectedEntry && setActiveGameId(selectedEntry.id)}
                   type="button"
                 >
-                  Play demo
+                  {selectedEntry?.status === "scaffolded" ? "Preview" : "Play demo"}
                 </button>
               )}
             </div>
@@ -274,7 +169,10 @@ export const NightshadeArcadeApp: React.FC = () => {
             <h2 className="m-0 text-sm">Prize Redemption</h2>
             <div className="mt-2 flex flex-col gap-2">
               {prizes.map((prize) => (
-                <div key={prize.id} className="rounded border border-[#3e2731] bg-white p-2">
+                <div
+                  key={prize.id}
+                  className="rounded border border-[#3e2731] bg-white p-2"
+                >
                   <div className="text-xs font-bold">{prize.name}</div>
                   <div className="text-xs">{prize.description}</div>
                   <div className="mt-1 text-xs">

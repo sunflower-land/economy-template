@@ -1,10 +1,14 @@
-export interface ArcadeMinigame {
-  id: string;
-  name: string;
-  description: string;
-  tokenReward: number;
-  status: "available" | "coming-soon";
-}
+/**
+ * hubConfig.ts — Arcade hub static data.
+ *
+ * Game metadata (id, name, description, tokenReward, status, backingType)
+ * has been moved to the central game registry:
+ *   src/features/arcade/games/registry.ts
+ *
+ * This file now owns prize redemption data only.
+ * Hub-facing game lists are derived from GAME_REGISTRY at runtime so
+ * registry and hub stay in sync automatically.
+ */
 
 export interface ArcadePrize {
   id: string;
@@ -12,121 +16,6 @@ export interface ArcadePrize {
   tokenCost: number;
   description: string;
 }
-
-export const minigames: ArcadeMinigame[] = [
-  {
-    id: "poker",
-    name: "Poker",
-    description: "Texas Hold'em against the house.",
-    tokenReward: 100,
-    status: "available",
-  },
-  {
-    id: "blackjack",
-    name: "Blackjack",
-    description: "Beat the dealer without busting.",
-    tokenReward: 100,
-    status: "available",
-  },
-  {
-    id: "gofish",
-    name: "Go Fish",
-    description: "Collect matching sets before your opponent.",
-    tokenReward: 75,
-    status: "available",
-  },
-  {
-    id: "uno",
-    name: "Uno",
-    description: "Play special cards to empty your hand first.",
-    tokenReward: 90,
-    status: "available",
-  },
-  {
-    id: "solitaire",
-    name: "Solitaire",
-    description: "Classic card-stacking challenge.",
-    tokenReward: 70,
-    status: "available",
-  },
-  {
-    id: "goblin-invaders",
-    name: "Goblin Invaders",
-    description: "Arcade survival shooter.",
-    tokenReward: 120,
-    status: "coming-soon",
-  },
-  {
-    id: "tetris",
-    name: "Tetris",
-    description: "Clear lines with falling blocks.",
-    tokenReward: 110,
-    status: "coming-soon",
-  },
-  {
-    id: "barley-breaker",
-    name: "Barley Breaker",
-    description: "Classic 15-puzzle tile challenge.",
-    tokenReward: 80,
-    status: "coming-soon",
-  },
-  {
-    id: "pac-man",
-    name: "Pac-Man",
-    description: "Navigate mazes and avoid enemies.",
-    tokenReward: 95,
-    status: "coming-soon",
-  },
-  {
-    id: "frogger",
-    name: "Frogger",
-    description: "Cross lanes and rivers safely.",
-    tokenReward: 85,
-    status: "coming-soon",
-  },
-  {
-    id: "tile-jump",
-    name: "Tile Jump (Playable Demo)",
-    description: "Playable minigame already wired in this repo.",
-    tokenReward: 50,
-    status: "available",
-  },
-  {
-    id: "hide-and-seek",
-    name: "Hide & Seek (Playable Demo)",
-    description: "Playable MMO-style minigame demo.",
-    tokenReward: 50,
-    status: "available",
-  },
-  {
-    id: "chicken-rescue",
-    name: "Chicken Rescue (Playable Demo)",
-    description: "Playable economy minigame from repository examples.",
-    tokenReward: 60,
-    status: "available",
-  },
-  {
-    id: "golden-crops",
-    name: "Golden Crops (Playable Demo)",
-    description: "Playable farming minigame from repository examples.",
-    tokenReward: 60,
-    status: "available",
-  },
-  {
-    id: "plaza-party",
-    name: "Plaza Party (Playable Demo)",
-    description: "Playable plaza exploration minigame from repository examples.",
-    tokenReward: 60,
-    status: "available",
-  },
-  {
-    id: "ui-resources",
-    name: "UI Resources (Playable Demo)",
-    description: "Playable economy dashboard demo from repository examples.",
-    tokenReward: 40,
-    status: "available",
-  },
-];
 
 export const prizes: ArcadePrize[] = [
   {
