@@ -72,7 +72,7 @@ export const NightshadeArcadeApp: React.FC = () => {
   // ── Active game rendering ─────────────────────────────────────────────────
   if (activeEntry && ActiveGameComponent) {
 
-    // Arcade card games own their back button via onBack prop
+    // "local" and "scaffolded" games own their back button via onBack prop
     const isLocalGame =
       activeEntry.backingType === "local" || activeEntry.backingType === "scaffolded";
 
@@ -129,21 +129,32 @@ export const NightshadeArcadeApp: React.FC = () => {
           <section className={cardClass}>
             <h2 className="m-0 text-sm">Minigame Hub</h2>
             <div className="mt-2 flex flex-col gap-2">
-              {GAME_REGISTRY.map((game) => (
-                <button
-                  key={game.id}
-                  className="flex w-full cursor-pointer flex-col gap-1 rounded border border-[#3e2731] bg-white px-2 py-1 text-left hover:brightness-95"
-                  onClick={() => setSelectedGameId(game.id)}
-                  type="button"
-                >
-                  <strong className="text-xs">{game.name}</strong>
-                  <span className="text-xs">{game.description}</span>
-                  <span className="text-xs">
-                    Reward: +{game.tokenReward} Raven Coins · Status:{" "}
-                    {STATUS_LABEL[game.status] ?? game.status}
-                  </span>
-                </button>
-              ))}
+              {GAME_REGISTRY.map((game) => {
+                const isSelected = game.id === selectedGameId;
+                const isPlayable = game.status === "available" || game.status === "scaffolded";
+                return (
+                  <button
+                    key={game.id}
+                    className={`flex w-full cursor-pointer flex-col gap-1 rounded border px-2 py-1 text-left hover:brightness-95 ${
+                      isSelected
+                        ? "border-[#b65389] bg-[#f9e7f4]"
+                        : "border-[#3e2731] bg-white"
+                    }`}
+                    onClick={() => {
+                      setSelectedGameId(game.id);
+                      if (isPlayable) setActiveGameId(game.id);
+                    }}
+                    type="button"
+                  >
+                    <strong className="text-xs">{game.name}</strong>
+                    <span className="text-xs">{game.description}</span>
+                    <span className="text-xs">
+                      Reward: +{game.tokenReward} Raven Coins · Status:{" "}
+                      {STATUS_LABEL[game.status] ?? game.status}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
             <div className="mt-2 flex gap-2">
               <button
@@ -153,15 +164,6 @@ export const NightshadeArcadeApp: React.FC = () => {
               >
                 Simulate completion
               </button>
-              {(selectedEntry?.status === "available" || selectedEntry?.status === "scaffolded") && (
-                <button
-                  className="rounded bg-[#3e8948] px-3 py-2 text-xs text-white hover:brightness-95"
-                  onClick={() => selectedEntry && setActiveGameId(selectedEntry.id)}
-                  type="button"
-                >
-                  {selectedEntry?.status === "scaffolded" ? "Preview" : "Play demo"}
-                </button>
-              )}
             </div>
           </section>
 
