@@ -40,6 +40,16 @@ Use this flow:
 2. Run `npm run build:hosted`
 3. Upload the contents of `dist/` (not the project root)
 
+## Hosted upload files from GitHub Actions
+
+When CI runs on `NA-test`, it now creates two separate outputs:
+
+- **GitHub Pages artifact** (for Pages deploy): built from `npm run build:pages`
+- **`hosted-upload-dist` artifact** (for provider upload): built from `npm run build:hosted`
+
+Download **`hosted-upload-dist`** from the workflow run artifacts.  
+After extraction, upload the extracted folder contents directly to the provider so `index.html` stays at the top level with `assets/` alongside it.
+
 Notes:
 
 - `dist/index.html` is the required entry file at site root for the uploader.

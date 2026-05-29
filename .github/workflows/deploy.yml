@@ -36,10 +36,29 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=6144
           CI: false
 
+      - name: Snapshot Pages dist
+        run: mv dist dist-pages
+
+      - name: Build hosted upload dist
+        run: npm run build:hosted
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
+          CI: false
+
+      - name: Snapshot hosted upload dist
+        run: mv dist hosted-upload-dist
+
+      - name: Upload hosted upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hosted-upload-dist
+          path: hosted-upload-dist
+          if-no-files-found: error
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: dist-pages
 
   deploy:
     needs: build
