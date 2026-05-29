@@ -30,3 +30,26 @@ body {
     image-rendering: -webkit-optimize-contrast;
   }
 }
+
+.text-stroke {
+  -webkit-text-stroke: 1px #3e2731;
+}
+
+.balance-text {
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 1;
+  text-shadow:
+    0 1px 0 #3e2731,
+    1px 0 0 #3e2731,
+    -1px 0 0 #3e2731,
+    0 -1px 0 #3e2731;
+}
+
+.coins-bb-hud-backdrop {
+  border-radius: 4px 0 0 4px;
+}
+
+.sfl-hud-backdrop {
+  border-radius: 4px 0 0 4px;
+}
