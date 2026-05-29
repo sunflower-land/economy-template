@@ -21,6 +21,31 @@ import {
 import { MinigameSessionProvider } from "./sessionProvider";
 import { requestClosePortal } from "./closePortal";
 
+function resolveSessionFarmId(
+  session: MinigameSessionResponse,
+): number | undefined {
+  const farm = session.farm as Record<string, unknown>;
+  const candidates = [
+    farm.id,
+    farm.farmId,
+    farm.farmID,
+    farm.fid,
+    farm.farm_id,
+  ];
+  for (const candidate of candidates) {
+    const parsed =
+      typeof candidate === "number"
+        ? candidate
+        : typeof candidate === "string"
+          ? Number(candidate)
+          : undefined;
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return undefined;
+}
+
 export type PortalBootstrapConfig = {
   offlineActions: Record<string, unknown>;
   bootstrapAction?: string;
@@ -174,7 +199,7 @@ export const MinigamePortalProvider: React.FC<
           return;
         }
 
-        const { farmId, portalId: fromJwt } = decodePortalToken(jwt);
+        const { farmId, portalId: fromJwt, username } = decodePortalToken(jwt);
         const portalId = fromJwt ?? (CONFIG.PORTAL_APP ?? "").trim();
         if (!portalId) {
           throw new Error(
@@ -183,6 +208,7 @@ export const MinigamePortalProvider: React.FC<
         }
 
         const session = await getPlayerEconomySession({ token: jwt });
+        const resolvedFarmId = farmId ?? resolveSessionFarmId(session) ?? 0;
         let playerEconomy = normalizeMinigameFromApi(session.playerEconomy);
         if (cfg.bootstrapAction) {
           playerEconomy = await tryBootstrapAction(
@@ -193,10 +219,13 @@ export const MinigamePortalProvider: React.FC<
         }
 
         const ctx: BootstrapContext = {
-          id: farmId ?? 0,
+          id: resolvedFarmId,
           jwt,
           portalId,
-          farm: session.farm,
+          farm: {
+            ...session.farm,
+            username: session.farm.username ?? username,
+          },
           playerEconomy,
           actions: session.actions,
           economyMeta: buildEconomyMetaFromSession(session),

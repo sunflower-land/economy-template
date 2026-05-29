@@ -13,7 +13,10 @@ import {
   tokenUriBuilder,
   type BumpkinParts,
 } from "lib/utils/tokenUriBuilder";
-import { decodePortalTokenClaims } from "lib/portal/decodePortalToken";
+import {
+  decodePortalToken,
+  decodePortalTokenClaims,
+} from "lib/portal/decodePortalToken";
 
 type SessionBumpkin = {
   equipped?: Record<string, string>;
@@ -27,6 +30,59 @@ function asRecord(value: unknown): Record<string, unknown> | undefined {
   return value as Record<string, unknown>;
 }
 
+function asJsonRecord(value: unknown): Record<string, unknown> | undefined {
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return asRecord(parsed);
+    } catch {
+      return undefined;
+    }
+  }
+  return asRecord(value);
+}
+
+const EQUIPPED_KEYS = [
+  "background",
+  "body",
+  "hair",
+  "shirt",
+  "pants",
+  "shoes",
+  "tool",
+  "hat",
+  "necklace",
+  "secondaryTool",
+  "coat",
+  "onesie",
+  "suit",
+  "wings",
+  "dress",
+  "beard",
+  "aura",
+] as const;
+
+function toEquippedRecord(value: unknown): Record<string, string> | undefined {
+  const direct = asJsonRecord(value);
+  if (!direct) return undefined;
+
+  const equipped = asJsonRecord(direct.equipped);
+  if (equipped) return equipped as Record<string, string>;
+
+  const clothing = asJsonRecord(direct.clothing);
+  if (clothing) return clothing as Record<string, string>;
+
+  const flattened = EQUIPPED_KEYS.reduce<Record<string, string>>((acc, key) => {
+    const v = direct[key];
+    if (typeof v === "string") {
+      acc[key] = v;
+    }
+    return acc;
+  }, {});
+
+  return Object.keys(flattened).length > 0 ? flattened : undefined;
+}
+
 function extractSessionBumpkinFromJwt(jwt: string): SessionBumpkin | undefined {
   const claims = decodePortalTokenClaims(jwt);
   if (!claims) return undefined;
@@ -38,16 +94,20 @@ function extractSessionBumpkinFromJwt(jwt: string): SessionBumpkin | undefined {
     asRecord(asRecord(claims.state)?.farm)?.bumpkin,
     asRecord(claims.game)?.bumpkin,
     asRecord(asRecord(claims.game)?.farm)?.bumpkin,
+    asRecord(claims.user)?.bumpkin,
+    asRecord(claims.properties)?.bumpkin,
+    asRecord(asRecord(claims.properties)?.state)?.bumpkin,
+    asRecord(asRecord(asRecord(claims.properties)?.state)?.farm)?.bumpkin,
   ];
 
   for (const candidate of candidates) {
-    const bumpkin = asRecord(candidate);
+    const bumpkin = asJsonRecord(candidate);
     if (!bumpkin) continue;
 
-    const equipped = asRecord(bumpkin.equipped);
+    const equipped = toEquippedRecord(bumpkin);
     if (equipped) {
       return {
-        equipped: equipped as Record<string, string>,
+        equipped,
         experience:
           typeof bumpkin.experience === "number" ? bumpkin.experience : undefined,
         id: typeof bumpkin.id === "number" ? bumpkin.id : undefined,
@@ -64,15 +124,16 @@ function extractSessionBumpkinFromJwt(jwt: string): SessionBumpkin | undefined {
 }
 
 export const NightshadeArcadePhaser: React.FC = () => {
-  const { farm, jwt } = useMinigameSession();
+  const { farm, farmId, jwt } = useMinigameSession();
   const game = useRef<Game>(undefined);
+  const tokenMeta = useMemo(() => decodePortalToken(jwt), [jwt]);
 
   const scene = "nightshade-arcade";
   const scenes: any[] = [Preloader, NightshadeArcadeScene];
   const bumpkin = useMemo<GuestBumpkinJoin>(() => {
     const sessionBumpkin =
       (farm.bumpkin as SessionBumpkin | undefined) ?? extractSessionBumpkinFromJwt(jwt);
-    const equipped = sessionBumpkin?.equipped;
+    const equipped = toEquippedRecord(sessionBumpkin);
 
     let interpreted: Record<string, string> | undefined;
     if (!equipped && sessionBumpkin?.tokenUri) {
@@ -181,15 +242,15 @@ export const NightshadeArcadePhaser: React.FC = () => {
     game.current.registry.set("initialScene", scene);
     game.current.registry.set("gameState", {
       bumpkin,
-      username: farm.username,
+      username: farm.username ?? tokenMeta.username,
       balance: farm.balance,
     });
-    game.current.registry.set("id", 0);
+    game.current.registry.set("id", farmId);
 
     return () => {
       game.current?.destroy(true);
     };
-  }, [bumpkin, farm.balance, farm.username]);
+  }, [bumpkin, farm.balance, farm.username, farmId, tokenMeta.username]);
 
   const ref = useRef<HTMLDivElement>(null);
 

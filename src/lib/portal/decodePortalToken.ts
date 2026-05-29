@@ -49,7 +49,17 @@ export function decodePortalToken(token: string): {
   try {
     const merged = decodePortalTokenClaims(token);
     if (!merged) return {};
-    const farmRaw = merged.farmId;
+    const farmCandidates = [
+      merged.farmId,
+      merged.farmID,
+      merged.id,
+      (merged as Record<string, unknown>).fid,
+      (merged as Record<string, unknown>).farm,
+      (merged as Record<string, unknown>).farm_id,
+    ];
+    const farmRaw = farmCandidates.find(
+      (value) => typeof value === "number" || typeof value === "string",
+    );
     const farmId =
       typeof farmRaw === "number"
         ? farmRaw
