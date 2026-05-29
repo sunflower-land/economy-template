@@ -9,7 +9,7 @@ const imagesAssets = path.resolve(__dirname, "../images/assets");
 
 export default defineConfig({
   plugins: [react(), tsconfigPaths()],
-  base: "/economy-template/",
+  base: "/",
   resolve: {
     alias: {
       "@sl-assets": imagesAssets,
