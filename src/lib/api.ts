@@ -1,6 +1,9 @@
 /**
  * Remote / persistence stubs. Extend with real endpoints for Sunflower Land services.
  * Trade helpers live here (single module — see docs/API.md).
+ *
+ * NOTE: Score submission uses the production economies API via `lib/portal/api.submitScore`
+ * (POST /action with `type: "score.submitted"`). The stub below has been removed.
  */
 
 export interface PlayerProfile {
@@ -21,12 +24,6 @@ export async function loadPlayerProfile(): Promise<PlayerProfile> {
     skulls: 0,
     anonymous: true,
   };
-}
-
-/** TODO: POST score / session result */
-export async function submitScore(_score: number): Promise<void> {
-  await delay(200);
-  // TODO: wire API
 }
 
 /** TODO: purchase / unlock flow */
