@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from "react";
 import { Game, AUTO } from "phaser";
 import NinePatchPlugin from "phaser3-rex-plugins/plugins/ninepatch-plugin.js";
 import VirtualJoystickPlugin from "phaser3-rex-plugins/plugins/virtualjoystick-plugin.js";
-import PhaserNavMeshPlugin from "phaser-navmesh";
 
 import { Preloader } from "features/world/scenes/Preloader";
 import { NightshadeArcadeScene } from "./NightshadeArcadeScene";
@@ -35,12 +34,6 @@ export const NightshadeArcadePhaser: React.FC = () => {
           {
             key: "rexVirtualJoystick",
             plugin: VirtualJoystickPlugin,
-            start: true,
-          },
-          {
-            key: "PhaserNavMeshPlugin",
-            plugin: PhaserNavMeshPlugin,
-            mapping: "navMeshPlugin",
             start: true,
           },
         ],
