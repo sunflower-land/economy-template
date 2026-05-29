@@ -259,7 +259,11 @@ export class NightshadeArcadeScene extends BaseScene {
   }
 
   updatePlayer(): void {
-    if (nightshadeArcadeEvents.isMinigameActive) return;
+    if (nightshadeArcadeEvents.isMinigameActive) {
+      const body = this.currentPlayer?.body as Phaser.Physics.Arcade.Body | undefined;
+      body?.setVelocity(0, 0);
+      return;
+    }
 
     super.updatePlayer();
   }
