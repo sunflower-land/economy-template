@@ -3,8 +3,10 @@ import customTileset from "./assets/nightshade-arcade-tilesheet.png";
 import stairsDown from "./assets/stairs_down.png";
 import ravenCoinIcon from "./assets/RavenCoin.webp";
 import type { SceneId } from "features/world/sceneIds";
+import { isTouchDevice } from "features/world/lib/device";
 import { BaseScene } from "features/world/scenes/BaseScene";
 import { translate } from "lib/i18n/translate";
+import VirtualJoystick from "phaser3-rex-plugins/plugins/virtualjoystick.js";
 import { minigamesEventEmitter } from "./lib/minigamesEvents";
 import { nightshadeArcadeEvents } from "./lib/nightshadeArcadeEvents";
 import { PortalNPC } from "./lib/PortalNPC";
@@ -32,6 +34,22 @@ export class NightshadeArcadeScene extends BaseScene {
     this.load.image("ravenCoinIcon", ravenCoinIcon);
 
     super.preload();
+  }
+
+  override initialiseControls() {
+    if (isTouchDevice()) {
+      const { centerX, centerY, height } = this.cameras.main;
+      this.joystick = new VirtualJoystick(this, {
+        x: centerX,
+        y: centerY - 35 + height / this.zoom / 2,
+        radius: 15,
+        base: this.add.circle(0, 0, 15, 0x000000, 0.2).setDepth(1000000000),
+        thumb: this.add.circle(0, 0, 7, 0xffffff, 0.2).setDepth(1000000000),
+        forceMin: 2,
+      });
+    }
+
+    super.initialiseControls();
   }
 
   // Override initialiseMap to use correct margin/spacing for custom arcade tilesheet
@@ -77,6 +95,8 @@ export class NightshadeArcadeScene extends BaseScene {
           polygon
             .setInteractive({ cursor: "pointer" })
             .on("pointerdown", (p: Phaser.Input.Pointer) => {
+              if (this.joystick?.pointer) return;
+
               if (p.downElement.nodeName === "CANVAS") {
                 const distance = Phaser.Math.Distance.BetweenPoints(
                   this.currentPlayer as any,
@@ -198,6 +218,8 @@ export class NightshadeArcadeScene extends BaseScene {
 
     // Make Raven clickable to open shop
     ravenNpc.setInteractive({ cursor: "pointer" }).on("pointerdown", () => {
+      if (this.joystick?.pointer) return;
+
       if (this.checkDistanceToSprite(ravenNpc as any, 50)) {
         nightshadeArcadeEvents.emitOpenShop();
       }
@@ -225,6 +247,8 @@ export class NightshadeArcadeScene extends BaseScene {
           chestZone
             .setInteractive({ cursor: "pointer" })
             .on("pointerdown", () => {
+              if (this.joystick?.pointer) return;
+
               if (this.checkDistanceToSprite(chestZone as any, 50)) {
                 nightshadeArcadeEvents.emitChestClicked();
               }
