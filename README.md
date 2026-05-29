@@ -27,3 +27,25 @@ npm run dev
 ## Next migration step
 
 Use `portalPortTargets` in `src/features/arcade/portal/portingPlan.ts` to track and prioritize imports from Sunflower-Land's `portal` branch as each minigame is moved into `src/features/arcade/games`.
+
+## Hosted upload testing (Sunflower Land uploader)
+
+For manual uploader testing at:
+
+- `https://Nightshade-Arcade.economies.sunflower-land.com`
+
+Use this flow:
+
+1. Run `npm install`
+2. Run `npm run build`
+3. Upload the contents of `dist/` (not the project root)
+
+Notes:
+
+- `dist/index.html` is the required entry file at site root for the uploader.
+- This project expects root-hosted static paths (`/assets`, `/game`, `/world`) for hosted upload.
+- The active app entry (`src/App.tsx`) does not use `BrowserRouter`; embedded game flows use in-memory routing where needed, avoiding deep-link refresh routing issues for hosted uploads.
+- Runtime minigame session uses:
+  - `?jwt=...` (required for authenticated live economy session)
+  - `?minigamesApiUrl=...` (optional runtime override)
+  - `VITE_MINIGAMES_API_URL` (build-time fallback when query param is absent)
