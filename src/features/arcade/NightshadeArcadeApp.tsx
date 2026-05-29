@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Modal } from "components/ui/Modal";
 import { getGameEntry } from "./games/registry";
 import { NightshadeArcadePhaser } from "./NightshadeArcadePhaser";
 import { minigamesEventEmitter } from "./lib/minigamesEvents";
+import { nightshadeArcadeEvents } from "./lib/nightshadeArcadeEvents";
 import ravenCoinIcon from "./assets/RavenCoin.webp";
 import { useMinigameSession } from "lib/portal";
 import { submitScore } from "lib/portal/api";
@@ -93,35 +95,17 @@ export const NightshadeArcadeApp: React.FC = () => {
     };
   }, []);
 
-  // ── Active game rendering ─────────────────────────────────────────────────
-  if (activeEntry && ActiveGameComponent) {
+  useEffect(() => {
+    const isGameOpen = Boolean(activeEntry && ActiveGameComponent);
+    nightshadeArcadeEvents.setMinigameActive(isGameOpen);
 
-    // "local" and "scaffolded" games own their back button via onBack prop
-    const isLocalGame =
-      activeEntry.backingType === "local" || activeEntry.backingType === "scaffolded";
+    return () => {
+      nightshadeArcadeEvents.setMinigameActive(false);
+    };
+  }, [activeEntry, ActiveGameComponent]);
 
-    if (isLocalGame) {
-      return (
-        <ActiveGameComponent
-          onBack={handleBack}
-          onWin={(tokens) => handleWin(tokens)}
-          tokenReward={activeEntry.tokenReward}
-        />
-      );
-    }
-
-    // Demo wrapper apps do not accept ArcadeGameProps — render with overlay back button
-    return (
-      <>
-        <DemoBackButton onClick={handleBack} />
-        <ActiveGameComponent
-          onBack={handleBack}
-          onWin={(tokens) => handleWin(tokens)}
-          tokenReward={activeEntry.tokenReward}
-        />
-      </>
-    );
-  }
+  const isLocalGame =
+    activeEntry?.backingType === "local" || activeEntry?.backingType === "scaffolded";
 
   return (
     <>
@@ -138,6 +122,18 @@ export const NightshadeArcadeApp: React.FC = () => {
           {tokenBalance} Raven Coins
         </div>
       </div>
+      {activeEntry && ActiveGameComponent ? (
+        <Modal show className="justify-stretch items-stretch bg-black/55 p-0">
+          <div className="relative h-full w-full overflow-hidden">
+            {!isLocalGame ? <DemoBackButton onClick={handleBack} /> : null}
+            <ActiveGameComponent
+              onBack={handleBack}
+              onWin={(tokens) => handleWin(tokens)}
+              tokenReward={activeEntry.tokenReward}
+            />
+          </div>
+        </Modal>
+      ) : null}
     </>
   );
 };
