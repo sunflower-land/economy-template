@@ -3,6 +3,9 @@ import { getGameEntry } from "./games/registry";
 import { NightshadeArcadePhaser } from "./NightshadeArcadePhaser";
 import { minigamesEventEmitter } from "./lib/minigamesEvents";
 import ravenCoinIcon from "./assets/RavenCoin.webp";
+import { useMinigameSession } from "lib/portal";
+import { submitScore } from "lib/portal/api";
+import { getMinigamesApiUrl } from "lib/portal/url";
 
 /** Back button rendered on top of demo apps that don't own their own back nav */
 const DemoBackButton: React.FC<{ onClick: () => void }> = ({ onClick }) => (
@@ -16,6 +19,7 @@ const DemoBackButton: React.FC<{ onClick: () => void }> = ({ onClick }) => (
 );
 
 export const NightshadeArcadeApp: React.FC = () => {
+  const { jwt } = useMinigameSession();
   const [tokenBalance, setTokenBalance] = useState(0);
   const [activeGameId, setActiveGameId] = useState<string | null>(null);
   const activeEntry = useMemo(
@@ -30,6 +34,11 @@ export const NightshadeArcadeApp: React.FC = () => {
 
   const handleWin = (tokens: number) => {
     setTokenBalance((b) => b + tokens);
+    if (getMinigamesApiUrl() && jwt) {
+      void submitScore({ token: jwt, score: tokens }).catch(() => {
+        // score submission errors are non-blocking
+      });
+    }
   };
 
   useEffect(() => {
