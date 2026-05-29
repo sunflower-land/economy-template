@@ -218,8 +218,6 @@ export class NightshadeArcadeScene extends BaseScene {
 
     // Make Raven clickable to open shop
     ravenNpc.setInteractive({ cursor: "pointer" }).on("pointerdown", () => {
-      if (this.joystick?.pointer) return;
-
       if (this.checkDistanceToSprite(ravenNpc as any, 50)) {
         nightshadeArcadeEvents.emitOpenShop();
       }

@@ -8,61 +8,125 @@ import { NightshadeArcadeScene } from "./NightshadeArcadeScene";
 import { createDefaultGuestBumpkin } from "lib/mmo/defaultGuestBumpkin";
 import { useMinigameSession } from "lib/portal";
 import type { GuestBumpkinJoin } from "lib/mmo/types";
-import { tokenUriBuilder, type BumpkinParts } from "lib/utils/tokenUriBuilder";
+import {
+  interpretTokenUri,
+  tokenUriBuilder,
+  type BumpkinParts,
+} from "lib/utils/tokenUriBuilder";
+import { decodePortalTokenClaims } from "lib/portal/decodePortalToken";
+
+type SessionBumpkin = {
+  equipped?: Record<string, string>;
+  experience?: number;
+  id?: number;
+  tokenUri?: string;
+};
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  return value as Record<string, unknown>;
+}
+
+function extractSessionBumpkinFromJwt(jwt: string): SessionBumpkin | undefined {
+  const claims = decodePortalTokenClaims(jwt);
+  if (!claims) return undefined;
+
+  const candidates: unknown[] = [
+    claims.bumpkin,
+    asRecord(claims.farm)?.bumpkin,
+    asRecord(claims.state)?.bumpkin,
+    asRecord(asRecord(claims.state)?.farm)?.bumpkin,
+    asRecord(claims.game)?.bumpkin,
+    asRecord(asRecord(claims.game)?.farm)?.bumpkin,
+  ];
+
+  for (const candidate of candidates) {
+    const bumpkin = asRecord(candidate);
+    if (!bumpkin) continue;
+
+    const equipped = asRecord(bumpkin.equipped);
+    if (equipped) {
+      return {
+        equipped: equipped as Record<string, string>,
+        experience:
+          typeof bumpkin.experience === "number" ? bumpkin.experience : undefined,
+        id: typeof bumpkin.id === "number" ? bumpkin.id : undefined,
+        tokenUri: typeof bumpkin.tokenUri === "string" ? bumpkin.tokenUri : undefined,
+      };
+    }
+
+    if (typeof bumpkin.tokenUri === "string") {
+      return { tokenUri: bumpkin.tokenUri };
+    }
+  }
+
+  return undefined;
+}
 
 export const NightshadeArcadePhaser: React.FC = () => {
-  const { farm } = useMinigameSession();
+  const { farm, jwt } = useMinigameSession();
   const game = useRef<Game>(undefined);
 
   const scene = "nightshade-arcade";
   const scenes: any[] = [Preloader, NightshadeArcadeScene];
   const bumpkin = useMemo<GuestBumpkinJoin>(() => {
-    const sessionBumpkin = farm.bumpkin as
-      | { equipped?: Record<string, string>; experience?: number; id?: number }
-      | undefined;
+    const sessionBumpkin =
+      (farm.bumpkin as SessionBumpkin | undefined) ?? extractSessionBumpkinFromJwt(jwt);
     const equipped = sessionBumpkin?.equipped;
 
-    if (!equipped) {
+    let interpreted: Record<string, string> | undefined;
+    if (!equipped && sessionBumpkin?.tokenUri) {
+      try {
+        interpreted = interpretTokenUri(sessionBumpkin.tokenUri)
+          .equipped as Record<string, string>;
+      } catch {
+        interpreted = undefined;
+      }
+    }
+
+    const resolvedEquipped = equipped ?? interpreted;
+
+    if (!resolvedEquipped) {
       return createDefaultGuestBumpkin();
     }
 
     const parts: BumpkinParts = {
-      background: (equipped.background || undefined) as BumpkinParts["background"],
-      body: (equipped.body || undefined) as BumpkinParts["body"],
-      hair: (equipped.hair || undefined) as BumpkinParts["hair"],
-      shirt: (equipped.shirt || undefined) as BumpkinParts["shirt"],
-      pants: (equipped.pants || undefined) as BumpkinParts["pants"],
-      shoes: (equipped.shoes || undefined) as BumpkinParts["shoes"],
-      tool: (equipped.tool || undefined) as BumpkinParts["tool"],
-      hat: (equipped.hat || undefined) as BumpkinParts["hat"],
-      necklace: (equipped.necklace || undefined) as BumpkinParts["necklace"],
-      secondaryTool: (equipped.secondaryTool || undefined) as BumpkinParts["secondaryTool"],
-      coat: (equipped.coat || undefined) as BumpkinParts["coat"],
-      onesie: (equipped.onesie || undefined) as BumpkinParts["onesie"],
-      suit: (equipped.suit || undefined) as BumpkinParts["suit"],
-      wings: (equipped.wings || undefined) as BumpkinParts["wings"],
-      dress: (equipped.dress || undefined) as BumpkinParts["dress"],
-      beard: (equipped.beard || undefined) as BumpkinParts["beard"],
-      aura: (equipped.aura || undefined) as BumpkinParts["aura"],
+      background: (resolvedEquipped.background || undefined) as BumpkinParts["background"],
+      body: (resolvedEquipped.body || undefined) as BumpkinParts["body"],
+      hair: (resolvedEquipped.hair || undefined) as BumpkinParts["hair"],
+      shirt: (resolvedEquipped.shirt || undefined) as BumpkinParts["shirt"],
+      pants: (resolvedEquipped.pants || undefined) as BumpkinParts["pants"],
+      shoes: (resolvedEquipped.shoes || undefined) as BumpkinParts["shoes"],
+      tool: (resolvedEquipped.tool || undefined) as BumpkinParts["tool"],
+      hat: (resolvedEquipped.hat || undefined) as BumpkinParts["hat"],
+      necklace: (resolvedEquipped.necklace || undefined) as BumpkinParts["necklace"],
+      secondaryTool: (resolvedEquipped.secondaryTool || undefined) as BumpkinParts["secondaryTool"],
+      coat: (resolvedEquipped.coat || undefined) as BumpkinParts["coat"],
+      onesie: (resolvedEquipped.onesie || undefined) as BumpkinParts["onesie"],
+      suit: (resolvedEquipped.suit || undefined) as BumpkinParts["suit"],
+      wings: (resolvedEquipped.wings || undefined) as BumpkinParts["wings"],
+      dress: (resolvedEquipped.dress || undefined) as BumpkinParts["dress"],
+      beard: (resolvedEquipped.beard || undefined) as BumpkinParts["beard"],
+      aura: (resolvedEquipped.aura || undefined) as BumpkinParts["aura"],
     };
 
     return {
       equipped: {
-        background: equipped.background ?? "",
-        body: equipped.body ?? "",
-        hair: equipped.hair ?? "",
-        shoes: equipped.shoes ?? "",
-        pants: equipped.pants ?? "",
-        tool: equipped.tool ?? "",
-        shirt: equipped.shirt ?? "",
-        coat: equipped.coat ?? "",
-        onesie: equipped.onesie ?? "",
-        suit: equipped.suit ?? "",
-        dress: equipped.dress ?? "",
-        hat: equipped.hat ?? "",
-        wings: equipped.wings ?? "",
-        beard: equipped.beard ?? "",
-        aura: equipped.aura ?? "",
+        background: resolvedEquipped.background ?? "",
+        body: resolvedEquipped.body ?? "",
+        hair: resolvedEquipped.hair ?? "",
+        shoes: resolvedEquipped.shoes ?? "",
+        pants: resolvedEquipped.pants ?? "",
+        tool: resolvedEquipped.tool ?? "",
+        shirt: resolvedEquipped.shirt ?? "",
+        coat: resolvedEquipped.coat ?? "",
+        onesie: resolvedEquipped.onesie ?? "",
+        suit: resolvedEquipped.suit ?? "",
+        dress: resolvedEquipped.dress ?? "",
+        hat: resolvedEquipped.hat ?? "",
+        wings: resolvedEquipped.wings ?? "",
+        beard: resolvedEquipped.beard ?? "",
+        aura: resolvedEquipped.aura ?? "",
       },
       experience: sessionBumpkin?.experience ?? 0,
       id: sessionBumpkin?.id ?? 0,
@@ -70,7 +134,7 @@ export const NightshadeArcadePhaser: React.FC = () => {
       tokenUri: tokenUriBuilder(parts),
       achievements: {},
     };
-  }, [farm.bumpkin]);
+  }, [farm.bumpkin, jwt]);
 
   useEffect(() => {
     const config: Phaser.Types.Core.GameConfig = {
