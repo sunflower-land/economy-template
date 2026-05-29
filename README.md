@@ -37,15 +37,26 @@ For manual uploader testing at:
 Use this flow:
 
 1. Run `npm install`
-2. Run `npm run build`
+2. Run `npm run build:hosted`
 3. Upload the contents of `dist/` (not the project root)
 
 Notes:
 
 - `dist/index.html` is the required entry file at site root for the uploader.
-- This project expects root-hosted static paths (`/assets`, `/game`, `/world`) for hosted upload.
+- Hosted builds use root base `/`, so static paths resolve as `/assets`, `/game`, `/world`.
 - The active app entry (`src/App.tsx`) does not use `BrowserRouter`; embedded game flows use in-memory routing where needed, avoiding deep-link refresh routing issues for hosted uploads.
 - Runtime minigame session uses:
   - `?jwt=...` (required for authenticated live economy session)
   - `?minigamesApiUrl=...` (optional runtime override)
   - `VITE_MINIGAMES_API_URL` (build-time fallback when query param is absent)
+
+## GitHub Pages preview build
+
+Use this build target for GitHub Pages preview/testing:
+
+```bash
+npm run build:pages
+```
+
+- Pages builds use base `/economy-template/` so JS/CSS/assets and `/game` + `/world` files resolve under the repository subpath.
+- The GitHub Pages workflow (`.github/workflows/deploy.yml`) runs `npm run build:pages` and deploys the `dist/` artifact.
