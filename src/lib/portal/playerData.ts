@@ -5,8 +5,9 @@ import {
   tokenUriBuilder,
   type BumpkinParts,
 } from "lib/utils/tokenUriBuilder";
-import { decodePortalToken } from "./decodePortalToken";
-import type { MinigameSessionResponse } from "./types";
+import { decodePortalToken, decodePortalTokenClaims } from "./decodePortalToken";
+import type { MinigameSessionResponse, PortalPlayerData } from "./types";
+import { getJwt, getMinigamesApiUrl, getUrl } from "./url";
 
 const EQUIPPED_KEYS = [
   "background",
@@ -31,16 +32,18 @@ const EQUIPPED_KEYS = [
 type EquippedKey = (typeof EQUIPPED_KEYS)[number];
 type EquippedRecord = Partial<Record<EquippedKey, string>>;
 
-export type PortalPlayerData = {
-  username?: string;
-  bumpkin: GuestBumpkinJoin;
-  hasRealBumpkin: boolean;
-  balances: Record<string, number>;
-};
-
-function asRecord(value: unknown): Record<string, unknown> | undefined {
+export function asRecord(value: unknown): Record<string, unknown> | undefined {
   if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
   return value as Record<string, unknown>;
+}
+
+export function firstString(...values: unknown[]): string | undefined {
+  for (const value of values) {
+    if (typeof value !== "string") continue;
+    const trimmed = value.trim();
+    if (trimmed.length > 0) return trimmed;
+  }
+  return undefined;
 }
 
 function pickText(value: unknown): string | undefined {
@@ -53,7 +56,7 @@ function pickNumber(value: unknown): number | undefined {
   if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value === "string" && value.trim().length > 0) {
     const parsed = Number(value);
-    if (Number.isFinite(parsed)) return parsed;
+    if (Number.isFinite(parsed)) return Number(parsed);
   }
   return undefined;
 }
@@ -136,32 +139,145 @@ function resolveBumpkin(raw: unknown): GuestBumpkinJoin | undefined {
   };
 }
 
-function normalizeBalances(
-  balances: MinigameSessionResponse["playerEconomy"]["balances"] | undefined,
-): Record<string, number> {
-  const normalized: Record<string, number> = {};
-  for (const [token, amount] of Object.entries(balances ?? {})) {
-    const numeric = typeof amount === "number" ? amount : Number(amount);
-    if (Number.isFinite(numeric)) {
-      normalized[token] = numeric;
+function resolveFarmId(...sources: unknown[]): number {
+  for (const source of sources) {
+    const farm = asRecord(source);
+    if (!farm) continue;
+    const candidates = [
+      farm.id,
+      farm.farmId,
+      farm.farmID,
+      farm.fid,
+      farm.farm_id,
+    ];
+    for (const candidate of candidates) {
+      const parsed =
+        typeof candidate === "number"
+          ? candidate
+          : typeof candidate === "string"
+            ? Number(candidate)
+            : undefined;
+      if (Number.isFinite(parsed)) return Number(parsed);
     }
   }
-  return normalized;
+  return 0;
+}
+
+function resolveLaunchContext(input: {
+  jwt: string;
+  portalId?: string;
+}): PortalPlayerData["launchContext"] {
+  const href =
+    typeof window !== "undefined" && typeof window.location?.href === "string"
+      ? window.location.href
+      : "";
+  const query = new URL(href || "https://nightshade.invalid").searchParams;
+  const queryEntries = Object.fromEntries(query.entries());
+  const embedded = firstString(
+    queryEntries.embedded,
+    queryEntries.embed,
+    queryEntries.iframe,
+  );
+
+  return {
+    href,
+    embedded: embedded === "1" || embedded === "true",
+    query: queryEntries,
+    jwt: firstString(input.jwt, queryEntries.jwt, getJwt()),
+    network: firstString(queryEntries.network),
+    language: firstString(queryEntries.language, queryEntries.lang),
+    font: firstString(queryEntries.font),
+    apiUrl: firstString(queryEntries.apiUrl, queryEntries.api, getUrl()),
+    minigamesApiUrl: firstString(
+      queryEntries.minigamesApiUrl,
+      queryEntries.minigamesApi,
+      getMinigamesApiUrl(),
+    ),
+  };
 }
 
 export function buildPortalPlayerData(input: {
-  farm: MinigameSessionResponse["farm"];
-  playerEconomy: MinigameSessionResponse["playerEconomy"];
   jwt: string;
+  portalId?: string;
+  minigameSession?: MinigameSessionResponse;
+  portalProfile?: Record<string, unknown>;
 }): PortalPlayerData {
+  const tokenClaims = decodePortalTokenClaims(input.jwt);
   const decoded = decodePortalToken(input.jwt);
-  const username = pickText(input.farm.username) ?? decoded.username;
-  const resolved = resolveBumpkin(input.farm.bumpkin);
+  const sessionFarm = asRecord(input.minigameSession?.farm);
+  const portalFarm = asRecord(input.portalProfile);
+  const claimsRecord = asRecord(tokenClaims);
+
+  const profileSource = input.portalProfile
+    ? "portal"
+    : input.minigameSession
+      ? "session"
+      : tokenClaims
+        ? "jwt"
+        : "offline";
+  const avatarSource = input.portalProfile
+    ? "portal"
+    : input.minigameSession
+      ? "session"
+      : tokenClaims
+        ? "jwt"
+        : "fallback";
+  const resolvedFarmId = resolveFarmId(
+    { farmId: decoded.farmId },
+    sessionFarm,
+    portalFarm,
+    claimsRecord,
+  );
+
+  const resolvedProfile: PortalPlayerData["resolvedProfile"] = {
+    farmId: resolvedFarmId,
+    portalId: firstString(
+      input.portalId,
+      decoded.portalId,
+      portalFarm?.portalId,
+      claimsRecord?.portalId,
+    ) ?? "",
+    username: firstString(
+      sessionFarm?.username,
+      portalFarm?.username,
+      portalFarm?.displayName,
+      portalFarm?.name,
+      decoded.username,
+      claimsRecord?.username,
+      claimsRecord?.preferred_username,
+    ),
+    balance: firstString(sessionFarm?.balance, portalFarm?.balance),
+    coins:
+      pickNumber(input.minigameSession?.playerEconomy?.balances?.Coin) ??
+      pickNumber(portalFarm?.coins) ??
+      pickNumber(asRecord(portalFarm?.inventory)?.Coin),
+    inventory: asRecord(portalFarm?.inventory),
+    bumpkin:
+      input.minigameSession?.farm.bumpkin ??
+      portalFarm?.bumpkin ??
+      claimsRecord?.bumpkin,
+    source: profileSource,
+  };
+
+  const resolvedBumpkin =
+    resolveBumpkin(resolvedProfile.bumpkin) ??
+    resolveBumpkin(claimsRecord?.avatar) ??
+    resolveBumpkin(claimsRecord?.tokenUri);
+  const fallbackBumpkin = createDefaultGuestBumpkin();
+  const bumpkin = resolvedBumpkin ?? fallbackBumpkin;
 
   return {
-    username,
-    bumpkin: resolved ?? createDefaultGuestBumpkin(),
-    hasRealBumpkin: !!resolved,
-    balances: normalizeBalances(input.playerEconomy.balances),
+    launchContext: resolveLaunchContext(input),
+    tokenClaims,
+    portalProfile: input.portalProfile,
+    minigameSession: input.minigameSession,
+    resolvedProfile,
+    resolvedAvatar: {
+      equipped: bumpkin.equipped,
+      experience: bumpkin.experience,
+      id: bumpkin.id,
+      tokenUri: bumpkin.tokenUri,
+      source: resolvedBumpkin ? avatarSource : "fallback",
+    },
   };
 }
