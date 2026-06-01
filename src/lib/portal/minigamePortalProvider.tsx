@@ -6,8 +6,17 @@ import { Button } from "components/ui/Button";
 import { Label } from "components/ui/Label";
 import { useAppTranslation } from "lib/i18n/useAppTranslations";
 import { decodePortalToken } from "./decodePortalToken";
-import { getJwt, getMinigamesApiUrl } from "./url";
-import { getPlayerEconomySession, postPlayerEconomyAction } from "./api";
+import { getJwt, getMinigamesApiUrl, getUrl } from "./url";
+import {
+  getPlayerEconomySession,
+  getPortalPlayerProfile,
+  postPlayerEconomyAction,
+} from "./api";
+import {
+  asRecord,
+  buildPortalPlayerData,
+  firstString,
+} from "./playerData";
 import {
   buildEconomyMetaFromSession,
   type BootstrapContext,
@@ -53,6 +62,35 @@ export type PortalBootstrapConfig = {
   /** With offline mode, supplies `items` / `descriptions` for the ui-resources dashboard. */
   offlineEconomyMeta?: MinigameSessionEconomyMeta;
 };
+
+function resolvePortalProfileFarmId(
+  portalProfile?: Record<string, unknown>,
+): number | undefined {
+  const farm = asRecord(portalProfile);
+  if (!farm) return undefined;
+
+  const candidates = [
+    farm.id,
+    farm.farmId,
+    farm.farmID,
+    farm.fid,
+    farm.farm_id,
+  ];
+
+  for (const candidate of candidates) {
+    const parsed =
+      typeof candidate === "number"
+        ? candidate
+        : typeof candidate === "string"
+          ? Number(candidate)
+          : undefined;
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return undefined;
+}
 
 async function tryBootstrapAction(
   token: string,
@@ -165,9 +203,10 @@ export const MinigamePortalProvider: React.FC<
 
     (async () => {
       const jwt = getJwt() ?? "";
-      const apiUrl = getMinigamesApiUrl();
+      const mainApiUrl = getUrl();
+      const minigamesApiUrl = getMinigamesApiUrl();
 
-      if (apiUrl && !jwt) {
+      if ((mainApiUrl || minigamesApiUrl) && !jwt) {
         if (!cancelled) {
           setPhase("unauthorised");
         }
@@ -180,8 +219,12 @@ export const MinigamePortalProvider: React.FC<
       }
 
       try {
-        if (!apiUrl) {
+        if (!mainApiUrl && !minigamesApiUrl) {
           const portalId = (CONFIG.PORTAL_APP ?? "").trim();
+          const playerData = buildPortalPlayerData({
+            jwt: "",
+            portalId,
+          });
           const ctx: BootstrapContext = {
             id: 0,
             jwt: "",
@@ -191,6 +234,7 @@ export const MinigamePortalProvider: React.FC<
               cfg.offlineMinigame?.() ?? emptySessionMinigame(),
             actions: cfg.offlineActions,
             economyMeta: cfg.offlineEconomyMeta,
+            playerData,
           };
           if (!cancelled) {
             setBootstrap(ctx);
@@ -207,10 +251,39 @@ export const MinigamePortalProvider: React.FC<
           );
         }
 
-        const session = await getPlayerEconomySession({ token: jwt });
-        const resolvedFarmId = farmId ?? resolveSessionFarmId(session) ?? 0;
-        let playerEconomy = normalizeMinigameFromApi(session.playerEconomy);
-        if (cfg.bootstrapAction) {
+        let portalProfile: Record<string, unknown> | undefined;
+        let session: MinigameSessionResponse | undefined;
+        let portalError: unknown;
+        let sessionError: unknown;
+
+        if (mainApiUrl) {
+          try {
+            portalProfile = await getPortalPlayerProfile({ token: jwt, portalId });
+          } catch (error) {
+            portalError = error;
+          }
+        }
+
+        if (minigamesApiUrl) {
+          try {
+            session = await getPlayerEconomySession({ token: jwt });
+          } catch (error) {
+            sessionError = error;
+          }
+        }
+
+        if (!portalProfile && !session) {
+          throw (
+            portalError ??
+            sessionError ??
+            new Error("Unable to load player data from the launch context")
+          );
+        }
+
+        let playerEconomy = session
+          ? normalizeMinigameFromApi(session.playerEconomy)
+          : cfg.offlineMinigame?.() ?? emptySessionMinigame();
+        if (cfg.bootstrapAction && session) {
           playerEconomy = await tryBootstrapAction(
             jwt,
             cfg.bootstrapAction,
@@ -218,17 +291,50 @@ export const MinigamePortalProvider: React.FC<
           );
         }
 
+        const playerData = buildPortalPlayerData({
+          jwt,
+          portalId,
+          minigameSession: session,
+          portalProfile,
+        });
+
+        const resolvedFarmId =
+          farmId ??
+          playerData.resolvedProfile.farmId ??
+          (session ? resolveSessionFarmId(session) : undefined) ??
+          resolvePortalProfileFarmId(portalProfile) ??
+          0;
+
+        const portalFarm = asRecord(portalProfile);
         const ctx: BootstrapContext = {
           id: resolvedFarmId,
           jwt,
           portalId,
           farm: {
-            ...session.farm,
-            username: session.farm.username ?? username,
+            ...(session?.farm ?? { balance: "0" }),
+            balance:
+              firstString(
+                session?.farm.balance,
+                playerData.resolvedProfile.balance,
+                portalFarm?.balance,
+              ) ?? "0",
+            username:
+              firstString(
+                session?.farm.username,
+                playerData.resolvedProfile.username,
+                username,
+              ) ?? undefined,
+            bumpkin:
+              session?.farm.bumpkin ??
+              playerData.resolvedProfile.bumpkin ??
+              portalFarm?.bumpkin,
           },
           playerEconomy,
-          actions: session.actions,
-          economyMeta: buildEconomyMetaFromSession(session),
+          actions: session?.actions ?? cfg.offlineActions,
+          economyMeta: session
+            ? buildEconomyMetaFromSession(session)
+            : cfg.offlineEconomyMeta,
+          playerData,
         };
         if (!cancelled) {
           setBootstrap(ctx);
