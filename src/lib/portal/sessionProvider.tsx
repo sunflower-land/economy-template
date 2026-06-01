@@ -11,6 +11,7 @@ import type {
   BootstrapContext,
   MinigameSessionEconomyMeta,
   MinigameSessionResponse,
+  PortalPlayerData,
 } from "./types";
 import {
   postPlayerEconomyAction,
@@ -66,6 +67,7 @@ export type MinigameSessionValue = {
   portalId: string;
   /** Session metadata for building dashboard config (`items`, `descriptions`, …). */
   economyMeta: MinigameSessionEconomyMeta | undefined;
+  playerData: PortalPlayerData;
   farm: MinigameSessionResponse["farm"];
   playerEconomy: MinigameSessionResponse["playerEconomy"];
   actions: Record<string, unknown>;
@@ -310,6 +312,7 @@ export function MinigameSessionProvider({
       jwt: bootstrap.jwt as string,
       portalId: bootstrap.portalId,
       economyMeta: bootstrap.economyMeta,
+      playerData: bootstrap.playerData,
       farm: bootstrap.farm,
       playerEconomy,
       actions: bootstrap.actions,
@@ -325,6 +328,7 @@ export function MinigameSessionProvider({
       bootstrap.jwt,
       bootstrap.portalId,
       bootstrap.economyMeta,
+      bootstrap.playerData,
       bootstrap.farm,
       bootstrap.actions,
       playerEconomy,
