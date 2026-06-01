@@ -347,8 +347,8 @@ export const MinigamePortalProvider: React.FC<
                 portalFarm?.name,
               ) ?? undefined,
             bumpkin:
-              session?.farm.bumpkin ??
               playerData.resolvedProfile.bumpkin ??
+              session?.farm.bumpkin ??
               portalFarm?.bumpkin,
           },
           playerEconomy,
