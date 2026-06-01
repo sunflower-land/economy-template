@@ -294,15 +294,15 @@ export function buildPortalPlayerData(input: {
       claimsRecord?.portalId,
     ) ?? "",
     username: firstString(
-      sessionFarm?.username,
       portalFarm?.username,
       portalFarm?.displayName,
       portalFarm?.name,
+      sessionFarm?.username,
       decoded.username,
       claimsRecord?.username,
       claimsRecord?.preferred_username,
     ),
-    balance: firstString(sessionFarm?.balance, portalFarm?.balance),
+    balance: firstString(portalFarm?.balance, sessionFarm?.balance),
     coins:
       pickNumber(input.minigameSession?.playerEconomy?.balances?.Coin) ??
       pickNumber(portalFarm?.coins) ??

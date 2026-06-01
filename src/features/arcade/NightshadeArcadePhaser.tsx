@@ -8,6 +8,7 @@ import { NightshadeArcadeScene } from "./NightshadeArcadeScene";
 import { useMinigameSession } from "lib/portal";
 import { createDefaultGuestBumpkin } from "lib/mmo/defaultGuestBumpkin";
 import type { GuestBumpkinJoin } from "lib/mmo/types";
+import { tokenUriBuilder } from "lib/utils/tokenUriBuilder";
 
 export const NightshadeArcadePhaser: React.FC = () => {
   const { farmId, farm, playerData } = useMinigameSession();
@@ -71,6 +72,16 @@ export const NightshadeArcadePhaser: React.FC = () => {
     };
 
     game.current = new Game(config);
+
+    if (import.meta.env?.DEV) {
+      // eslint-disable-next-line no-console
+      console.log("[NightshadeArcadePhaser] final render bumpkin", {
+        source: playerData.resolvedAvatar.source,
+        equipped: bumpkin.equipped,
+        tokenUri: bumpkin.tokenUri,
+        tokenUriFromEquipped: tokenUriBuilder(bumpkin.equipped),
+      });
+    }
 
     game.current.registry.set("initialScene", scene);
     game.current.registry.set("gameState", {

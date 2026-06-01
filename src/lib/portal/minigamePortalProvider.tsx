@@ -251,13 +251,15 @@ export const MinigamePortalProvider: React.FC<
           );
         }
 
-        // eslint-disable-next-line no-console
-        console.log("[MinigamePortal] bootstrap", {
-          portalId,
-          mainApiUrl: mainApiUrl ?? "(none)",
-          minigamesApiUrl: minigamesApiUrl ?? "(none)",
-          hasJwt: !!jwt,
-        });
+        if (import.meta.env?.DEV) {
+          // eslint-disable-next-line no-console
+          console.log("[MinigamePortal] bootstrap", {
+            portalId,
+            mainApiUrl: mainApiUrl ?? "(none)",
+            minigamesApiUrl: minigamesApiUrl ?? "(none)",
+            hasJwt: !!jwt,
+          });
+        }
 
         let portalProfile: Record<string, unknown> | undefined;
         let session: MinigameSessionResponse | undefined;
@@ -265,8 +267,10 @@ export const MinigamePortalProvider: React.FC<
         if (mainApiUrl) {
           try {
             portalProfile = await getPortalPlayerProfile({ token: jwt, portalId });
-            // eslint-disable-next-line no-console
-            console.log("[MinigamePortal] portal player profile loaded");
+            if (import.meta.env?.DEV) {
+              // eslint-disable-next-line no-console
+              console.log("[MinigamePortal] portal player profile loaded");
+            }
           } catch (error) {
             // Non-fatal: portal player profile enriches player data but is not required
             // to boot the app. Log the error and continue with whatever is available.
@@ -284,8 +288,10 @@ export const MinigamePortalProvider: React.FC<
         if (minigamesApiUrl) {
           try {
             session = await getPlayerEconomySession({ token: jwt });
-            // eslint-disable-next-line no-console
-            console.log("[MinigamePortal] minigame session loaded");
+            if (import.meta.env?.DEV) {
+              // eslint-disable-next-line no-console
+              console.log("[MinigamePortal] minigame session loaded");
+            }
           } catch (error) {
             // Non-fatal: minigame session enriches economy data but is not required
             // to boot the app. Log the error and continue with offline economy.
@@ -345,14 +351,14 @@ export const MinigamePortalProvider: React.FC<
             ...(session?.farm ?? { balance: "0" }),
             balance:
               firstString(
-                session?.farm.balance,
                 playerData.resolvedProfile.balance,
+                session?.farm.balance,
                 portalFarm?.balance,
               ) ?? "0",
             username:
               firstString(
-                session?.farm.username,
                 playerData.resolvedProfile.username,
+                session?.farm.username,
                 portalFarm?.username,
                 portalFarm?.displayName,
                 portalFarm?.name,
