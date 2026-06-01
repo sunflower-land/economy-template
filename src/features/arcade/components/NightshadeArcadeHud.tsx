@@ -68,11 +68,27 @@ export const NightshadeArcadeHud: React.FC<NightshadeArcadeHudProps> = ({
   extraRavenCoins,
 }) => {
   const { playerEconomy, farm, playerData } = useMinigameSession();
-  const baseRavenCoins = Number(playerEconomy.balances?.RavenCoin ?? 0);
+  const profileInventory = playerData.resolvedProfile.inventory;
+  const readAmount = (value: unknown) => {
+    const amount = Number(value ?? 0);
+    return Number.isFinite(amount) ? amount : 0;
+  };
+  const readInventoryAmount = (token: string) =>
+    readAmount(profileInventory?.[token]);
+
+  const baseRavenCoins = readAmount(
+    playerEconomy.balances?.RavenCoin ?? readInventoryAmount("RavenCoin"),
+  );
   const totalRavenCoins = Math.max(0, baseRavenCoins + extraRavenCoins);
-  const flowers = Number(farm.balance ?? 0);
-  const coins = Number(playerEconomy.balances?.Coin ?? 0);
-  const gems = Number(playerEconomy.balances?.Gem ?? 0);
+  const flowers = readAmount(playerData.resolvedProfile.balance ?? farm.balance);
+  const coins = readAmount(
+    playerData.resolvedProfile.coins ??
+      playerEconomy.balances?.Coin ??
+      readInventoryAmount("Coin"),
+  );
+  const gems = readAmount(
+    playerEconomy.balances?.Gem ?? readInventoryAmount("Gem"),
+  );
   const [showInventory, setShowInventory] = useState(false);
   const visibleInventoryEntries = useMemo(() => {
     const merged = new Map<string, number>();

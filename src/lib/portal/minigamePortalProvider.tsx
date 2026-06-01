@@ -243,7 +243,7 @@ export const MinigamePortalProvider: React.FC<
           return;
         }
 
-        const { farmId, portalId: fromJwt, username } = decodePortalToken(jwt);
+        const { farmId, portalId: fromJwt } = decodePortalToken(jwt);
         const portalId = fromJwt ?? (CONFIG.PORTAL_APP ?? "").trim();
         if (!portalId) {
           throw new Error(
@@ -342,7 +342,9 @@ export const MinigamePortalProvider: React.FC<
               firstString(
                 session?.farm.username,
                 playerData.resolvedProfile.username,
-                username,
+                portalFarm?.username,
+                portalFarm?.displayName,
+                portalFarm?.name,
               ) ?? undefined,
             bumpkin:
               session?.farm.bumpkin ??
