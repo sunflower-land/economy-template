@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from "react";
 import { HudContainer } from "components/ui/HudContainer";
-import { requestClosePortal } from "lib/portal/closePortal";
 import { useMinigameSession } from "lib/portal";
 import { Modal } from "components/ui/Modal";
 import { Panel } from "components/ui/Panel";
@@ -8,9 +7,6 @@ import ravenCoinIcon from "../assets/RavenCoin.webp";
 import coinsIcon from "../assets/coins.webp";
 import gemsIcon from "../assets/gem.webp";
 import flowerIcon from "../assets/flower_token.webp";
-import { PIXEL_SCALE } from "lib/constants";
-import { SUNNYSIDE } from "example-assets/sunnyside";
-import worldIcon from "example-assets/icons/world.png";
 import { PortalBasketButton } from "./PortalBasketButton";
 
 type NightshadeArcadeHudProps = {
@@ -67,20 +63,55 @@ const NightshadeArcadeBalances: React.FC<{
 export const NightshadeArcadeHud: React.FC<NightshadeArcadeHudProps> = ({
   extraRavenCoins,
 }) => {
-  const { farmId, playerData } = useMinigameSession();
-  const baseRavenCoins = Number(playerData.balances.RavenCoin ?? 0);
+  const { farmId, playerEconomy, farm, playerData } = useMinigameSession();
+  const profileInventory = playerData.resolvedProfile.inventory;
+  const readAmount = (value: unknown) => {
+    const amount = Number(value ?? 0);
+    return Number.isFinite(amount) ? amount : 0;
+  };
+  const readInventoryAmount = (token: string) =>
+    readAmount(profileInventory?.[token]);
+
+  const baseRavenCoins = readAmount(
+    playerEconomy.balances?.RavenCoin ?? readInventoryAmount("RavenCoin"),
+  );
   const totalRavenCoins = Math.max(0, baseRavenCoins + extraRavenCoins);
-  const coins = Number(playerData.balances.Coin ?? 0);
-  const gems = Number(playerData.balances.Gem ?? 0);
+  const flowers = readAmount(playerData.resolvedProfile.balance ?? farm.balance);
+  const coins = readAmount(
+    playerData.resolvedProfile.coins ??
+      playerEconomy.balances?.Coin ??
+      readInventoryAmount("Coin"),
+  );
+  const gems = readAmount(
+    playerEconomy.balances?.Gem ?? readInventoryAmount("Gem"),
+  );
+  const [showInventory, setShowInventory] = useState(false);
+  const visibleInventoryEntries = useMemo(() => {
+    const merged = new Map<string, number>();
+
+    const appendEntries = (entries: Record<string, unknown> | undefined) => {
+      Object.entries(entries ?? {}).forEach(([token, amount]) => {
+        const numericAmount = Number(amount ?? 0);
+        if (!Number.isFinite(numericAmount) || numericAmount <= 0) return;
+        merged.set(token, Math.max(numericAmount, merged.get(token) ?? 0));
+      });
+    };
+
+    appendEntries(playerData.resolvedProfile.inventory);
+    appendEntries(playerEconomy.balances);
+
+    return Array.from(merged.entries()).sort((a, b) => b[1] - a[1]);
+  }, [playerData.resolvedProfile.inventory, playerEconomy.balances]);
 
   return (
-    <HudContainer>
-      <div className="absolute left-3 top-3 rounded bg-black/55 px-3 py-2 text-xs text-white">
-        <div className="font-semibold">
-          {playerData.username ?? `Farmer #${farmId}`}
+    <>
+      <HudContainer>
+        <div className="absolute left-3 top-3 rounded bg-black/55 px-3 py-2 text-xs text-white">
+          <div className="font-semibold">
+            {playerData.resolvedProfile.username ?? `Farmer #${farmId}`}
+          </div>
+          <div className="text-[11px] text-[#e6bfd4]">Nightshade Arcade</div>
         </div>
-        <div className="text-[11px] text-[#e6bfd4]">Nightshade Arcade</div>
-      </div>
 
         <div className="absolute right-0 top-0 p-2.5">
           <NightshadeArcadeBalances
