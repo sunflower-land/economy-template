@@ -88,6 +88,8 @@ function useBumpkinFromSession(): {
         suit: equipped.suit ?? "",
         dress: equipped.dress ?? "",
         hat: equipped.hat ?? "",
+        necklace: equipped.necklace ?? "",
+        secondaryTool: equipped.secondaryTool ?? "",
         wings: equipped.wings ?? "",
         beard: equipped.beard ?? "",
         aura: equipped.aura ?? "",
