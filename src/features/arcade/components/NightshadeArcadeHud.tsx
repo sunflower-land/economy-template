@@ -67,91 +67,20 @@ const NightshadeArcadeBalances: React.FC<{
 export const NightshadeArcadeHud: React.FC<NightshadeArcadeHudProps> = ({
   extraRavenCoins,
 }) => {
-  const { playerEconomy, farm, playerData } = useMinigameSession();
-  const profileInventory = playerData.resolvedProfile.inventory;
-  const readAmount = (value: unknown) => {
-    const amount = Number(value ?? 0);
-    return Number.isFinite(amount) ? amount : 0;
-  };
-  const readInventoryAmount = (token: string) =>
-    readAmount(profileInventory?.[token]);
-
-  const baseRavenCoins = readAmount(
-    playerEconomy.balances?.RavenCoin ?? readInventoryAmount("RavenCoin"),
-  );
+  const { farmId, playerData } = useMinigameSession();
+  const baseRavenCoins = Number(playerData.balances.RavenCoin ?? 0);
   const totalRavenCoins = Math.max(0, baseRavenCoins + extraRavenCoins);
-  const flowers = readAmount(playerData.resolvedProfile.balance ?? farm.balance);
-  const coins = readAmount(
-    playerData.resolvedProfile.coins ??
-      playerEconomy.balances?.Coin ??
-      readInventoryAmount("Coin"),
-  );
-  const gems = readAmount(
-    playerEconomy.balances?.Gem ?? readInventoryAmount("Gem"),
-  );
-  const [showInventory, setShowInventory] = useState(false);
-  const visibleInventoryEntries = useMemo(() => {
-    const merged = new Map<string, number>();
-
-    const appendEntries = (entries: Record<string, unknown> | undefined) => {
-      Object.entries(entries ?? {}).forEach(([token, amount]) => {
-        const numericAmount = Number(amount ?? 0);
-        if (!Number.isFinite(numericAmount) || numericAmount <= 0) return;
-        merged.set(token, Math.max(numericAmount, merged.get(token) ?? 0));
-      });
-    };
-
-    appendEntries(playerData.resolvedProfile.inventory);
-    appendEntries(playerEconomy.balances);
-
-    return Array.from(merged.entries()).sort((a, b) => b[1] - a[1]);
-  }, [playerData.resolvedProfile.inventory, playerEconomy.balances]);
+  const coins = Number(playerData.balances.Coin ?? 0);
+  const gems = Number(playerData.balances.Gem ?? 0);
 
   return (
-    <>
-      <HudContainer>
-        <div className="absolute bottom-0 p-2.5 left-0 flex flex-col space-y-2.5">
-          <div
-            id="travel"
-            className="flex relative z-50 justify-center cursor-pointer hover:img-highlight group"
-            style={{
-              width: `${PIXEL_SCALE * 22}px`,
-              height: `${PIXEL_SCALE * 23}px`,
-            }}
-            onClick={(event) => {
-              event.stopPropagation();
-              event.preventDefault();
-              requestClosePortal();
-            }}
-          >
-            <img
-              alt=""
-              src={SUNNYSIDE.ui.round_button_pressed}
-              className="absolute"
-              style={{
-                width: `${PIXEL_SCALE * 22}px`,
-              }}
-            />
-            <img
-              alt=""
-              src={SUNNYSIDE.ui.round_button}
-              className="absolute group-active:translate-y-[2px]"
-              style={{
-                width: `${PIXEL_SCALE * 22}px`,
-              }}
-            />
-            <img
-              alt=""
-              src={worldIcon}
-              className="absolute group-active:translate-y-[2px]"
-              style={{
-                width: `${PIXEL_SCALE * 12}px`,
-                left: `${PIXEL_SCALE * 5}px`,
-                top: `${PIXEL_SCALE * 4}px`,
-              }}
-            />
-          </div>
+    <HudContainer>
+      <div className="absolute left-3 top-3 rounded bg-black/55 px-3 py-2 text-xs text-white">
+        <div className="font-semibold">
+          {playerData.username ?? `Farmer #${farmId}`}
         </div>
+        <div className="text-[11px] text-[#e6bfd4]">Nightshade Arcade</div>
+      </div>
 
         <div className="absolute right-0 top-0 p-2.5">
           <NightshadeArcadeBalances

@@ -5,103 +5,15 @@ import VirtualJoystickPlugin from "phaser3-rex-plugins/plugins/virtualjoystick-p
 
 import { Preloader } from "features/world/scenes/Preloader";
 import { NightshadeArcadeScene } from "./NightshadeArcadeScene";
-import { createDefaultGuestBumpkin } from "lib/mmo/defaultGuestBumpkin";
 import { useMinigameSession } from "lib/portal";
-import type { GuestBumpkinJoin } from "lib/mmo/types";
-import {
-  interpretTokenUri,
-  tokenUriBuilder,
-  type BumpkinParts,
-} from "lib/utils/tokenUriBuilder";
 
 export const NightshadeArcadePhaser: React.FC = () => {
-  const { farm, farmId, playerData } = useMinigameSession();
+  const { farm, playerData } = useMinigameSession();
   const game = useRef<Game>(undefined);
 
   const scene = "nightshade-arcade";
   const scenes: any[] = [Preloader, NightshadeArcadeScene];
-  const bumpkin = useMemo<GuestBumpkinJoin>(() => {
-    const avatar = playerData.resolvedAvatar;
-    const equipped = avatar.equipped;
-
-    let interpreted: Record<string, string> | undefined;
-    if (!equipped && avatar.tokenUri) {
-      try {
-        interpreted = interpretTokenUri(avatar.tokenUri)
-          .equipped as Record<string, string>;
-      } catch {
-        interpreted = undefined;
-      }
-    }
-
-    const resolvedEquipped = equipped ?? interpreted;
-
-    if (!resolvedEquipped) {
-      return createDefaultGuestBumpkin();
-    }
-
-    const parts: BumpkinParts = {
-      background: (resolvedEquipped.background || undefined) as BumpkinParts["background"],
-      body: (resolvedEquipped.body || undefined) as BumpkinParts["body"],
-      hair: (resolvedEquipped.hair || undefined) as BumpkinParts["hair"],
-      shirt: (resolvedEquipped.shirt || undefined) as BumpkinParts["shirt"],
-      pants: (resolvedEquipped.pants || undefined) as BumpkinParts["pants"],
-      shoes: (resolvedEquipped.shoes || undefined) as BumpkinParts["shoes"],
-      tool: (resolvedEquipped.tool || undefined) as BumpkinParts["tool"],
-      hat: (resolvedEquipped.hat || undefined) as BumpkinParts["hat"],
-      necklace: (resolvedEquipped.necklace || undefined) as BumpkinParts["necklace"],
-      secondaryTool: (resolvedEquipped.secondaryTool || undefined) as BumpkinParts["secondaryTool"],
-      coat: (resolvedEquipped.coat || undefined) as BumpkinParts["coat"],
-      onesie: (resolvedEquipped.onesie || undefined) as BumpkinParts["onesie"],
-      suit: (resolvedEquipped.suit || undefined) as BumpkinParts["suit"],
-      wings: (resolvedEquipped.wings || undefined) as BumpkinParts["wings"],
-      dress: (resolvedEquipped.dress || undefined) as BumpkinParts["dress"],
-      beard: (resolvedEquipped.beard || undefined) as BumpkinParts["beard"],
-      aura: (resolvedEquipped.aura || undefined) as BumpkinParts["aura"],
-    };
-
-    return {
-      equipped: {
-        background: resolvedEquipped.background ?? "",
-        body: resolvedEquipped.body ?? "",
-        hair: resolvedEquipped.hair ?? "",
-        shoes: resolvedEquipped.shoes ?? "",
-        pants: resolvedEquipped.pants ?? "",
-        tool: resolvedEquipped.tool ?? "",
-        shirt: resolvedEquipped.shirt ?? "",
-        coat: resolvedEquipped.coat ?? "",
-        onesie: resolvedEquipped.onesie ?? "",
-        suit: resolvedEquipped.suit ?? "",
-        dress: resolvedEquipped.dress ?? "",
-        hat: resolvedEquipped.hat ?? "",
-        wings: resolvedEquipped.wings ?? "",
-        beard: resolvedEquipped.beard ?? "",
-        aura: resolvedEquipped.aura ?? "",
-      },
-      experience: avatar.experience ?? 0,
-      id: avatar.id ?? 0,
-      skills: {},
-      tokenUri: avatar.tokenUri ?? tokenUriBuilder(parts),
-      achievements: {},
-    };
-  }, [playerData.resolvedAvatar]);
-
-  const profileBumpkin = useMemo(() => {
-    const candidate = playerData.resolvedProfile.bumpkin;
-    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
-      return bumpkin;
-    }
-    const equipped = (candidate as { equipped?: unknown }).equipped;
-    if (
-      equipped &&
-      typeof equipped === "object" &&
-      !Array.isArray(equipped) &&
-      Object.keys(equipped as Record<string, unknown>).length > 0
-    ) {
-      return candidate;
-    }
-    return bumpkin;
-  }, [bumpkin, playerData.resolvedProfile.bumpkin]);
+  const bumpkin = useMemo(() => playerData.bumpkin, [playerData.bumpkin]);
 
   useEffect(() => {
     const config: Phaser.Types.Core.GameConfig = {
@@ -147,24 +59,16 @@ export const NightshadeArcadePhaser: React.FC = () => {
 
     game.current.registry.set("initialScene", scene);
     game.current.registry.set("gameState", {
-      bumpkin: profileBumpkin,
-      username: playerData.resolvedProfile.username ?? farm.username,
-      balance: playerData.resolvedProfile.balance ?? farm.balance,
+      bumpkin,
+      username: playerData.username,
+      balance: farm.balance,
     });
     game.current.registry.set("id", farmId);
 
     return () => {
       game.current?.destroy(true);
     };
-  }, [
-    bumpkin,
-    farm.balance,
-    farm.username,
-    farmId,
-    playerData.resolvedProfile.balance,
-    playerData.resolvedProfile.username,
-    profileBumpkin,
-  ]);
+  }, [bumpkin, farm.balance, playerData.username]);
 
   const ref = useRef<HTMLDivElement>(null);
 

@@ -24,6 +24,7 @@ import {
   mergeMinigameEconomyFromApi,
   normalizeMinigameFromApi,
 } from "./runtimeHelpers";
+import { buildPortalPlayerData, type PortalPlayerData } from "./playerData";
 
 /**
  * Payload the session will send on `POST /action` after an optimistic update.
@@ -70,6 +71,7 @@ export type MinigameSessionValue = {
   playerData: PortalPlayerData;
   farm: MinigameSessionResponse["farm"];
   playerEconomy: MinigameSessionResponse["playerEconomy"];
+  playerData: PortalPlayerData;
   actions: Record<string, unknown>;
   dispatchAction: (input: DispatchMinigameActionInput) => DispatchMinigameActionResult;
   commitLocalPlayerEconomySync: (
@@ -315,6 +317,11 @@ export function MinigameSessionProvider({
       playerData: bootstrap.playerData,
       farm: bootstrap.farm,
       playerEconomy,
+      playerData: buildPortalPlayerData({
+        farm: bootstrap.farm,
+        playerEconomy,
+        jwt: bootstrap.jwt as string,
+      }),
       actions: bootstrap.actions,
       dispatchAction,
       commitLocalPlayerEconomySync,
