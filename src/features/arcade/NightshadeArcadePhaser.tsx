@@ -14,6 +14,15 @@ import {
   type BumpkinParts,
 } from "lib/utils/tokenUriBuilder";
 
+function isTechnicalLabel(value: string, farmId: number): boolean {
+  const normalized = value.trim();
+  if (!normalized) return true;
+  if (normalized === String(farmId)) return true;
+  if (/^\d+$/.test(normalized)) return true;
+  if (/^0x[a-f0-9]{16,}$/i.test(normalized)) return true;
+  return false;
+}
+
 export const NightshadeArcadePhaser: React.FC = () => {
   const { farm, farmId, playerData } = useMinigameSession();
   const game = useRef<Game>(undefined);
@@ -85,23 +94,24 @@ export const NightshadeArcadePhaser: React.FC = () => {
       achievements: {},
     };
   }, [playerData.resolvedAvatar]);
-
-  const profileBumpkin = useMemo(() => {
-    const candidate = playerData.resolvedProfile.bumpkin;
-    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
-      return bumpkin;
-    }
-    const equipped = (candidate as { equipped?: unknown }).equipped;
+  const resolvedUsername = useMemo(() => {
+    const fromProfile = playerData.resolvedProfile.username;
     if (
-      equipped &&
-      typeof equipped === "object" &&
-      !Array.isArray(equipped) &&
-      Object.keys(equipped as Record<string, unknown>).length > 0
+      typeof fromProfile === "string" &&
+      fromProfile.trim() &&
+      !isTechnicalLabel(fromProfile, farmId)
     ) {
-      return candidate;
+      return fromProfile.trim();
     }
-    return bumpkin;
-  }, [bumpkin, playerData.resolvedProfile.bumpkin]);
+    if (
+      typeof farm.username === "string" &&
+      farm.username.trim() &&
+      !isTechnicalLabel(farm.username, farmId)
+    ) {
+      return farm.username.trim();
+    }
+    return undefined;
+  }, [farm.username, farmId, playerData.resolvedProfile.username]);
 
   useEffect(() => {
     const config: Phaser.Types.Core.GameConfig = {
@@ -147,8 +157,8 @@ export const NightshadeArcadePhaser: React.FC = () => {
 
     game.current.registry.set("initialScene", scene);
     game.current.registry.set("gameState", {
-      bumpkin: profileBumpkin,
-      username: playerData.resolvedProfile.username ?? farm.username,
+      bumpkin,
+      username: resolvedUsername,
       balance: playerData.resolvedProfile.balance ?? farm.balance,
     });
     game.current.registry.set("id", farmId);
@@ -159,11 +169,9 @@ export const NightshadeArcadePhaser: React.FC = () => {
   }, [
     bumpkin,
     farm.balance,
-    farm.username,
     farmId,
     playerData.resolvedProfile.balance,
-    playerData.resolvedProfile.username,
-    profileBumpkin,
+    resolvedUsername,
   ]);
 
   const ref = useRef<HTMLDivElement>(null);

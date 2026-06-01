@@ -340,11 +340,11 @@ export const MinigamePortalProvider: React.FC<
               ) ?? "0",
             username:
               firstString(
-                session?.farm.username,
                 playerData.resolvedProfile.username,
                 portalFarm?.username,
                 portalFarm?.displayName,
                 portalFarm?.name,
+                session?.farm.username,
               ) ?? undefined,
             bumpkin:
               session?.farm.bumpkin ??
