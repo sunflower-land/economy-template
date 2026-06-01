@@ -364,8 +364,42 @@ export const MinigamePortalProvider: React.FC<
         }
       } catch (e) {
         if (!cancelled) {
-          setErrorMessage(e instanceof Error ? e.message : String(e));
-          setPhase("error");
+          const fallbackJwt = getJwt() ?? "";
+          const decoded = decodePortalToken(fallbackJwt);
+          const fallbackPortalId =
+            decoded.portalId ?? (CONFIG.PORTAL_APP ?? "").trim();
+          const fallbackPlayerData = buildPortalPlayerData({
+            jwt: fallbackJwt,
+            portalId: fallbackPortalId,
+          });
+
+          // eslint-disable-next-line no-console
+          console.warn(
+            "[MinigamePortal] Bootstrap failed; continuing with fallback context.",
+            {
+              error: e instanceof Error ? e.message : String(e),
+              portalId: fallbackPortalId || "(none)",
+            },
+          );
+
+          const fallbackCtx: BootstrapContext = {
+            id: decoded.farmId ?? fallbackPlayerData.resolvedProfile.farmId ?? 0,
+            jwt: fallbackJwt,
+            portalId: fallbackPortalId,
+            farm: {
+              balance: fallbackPlayerData.resolvedProfile.balance ?? "0",
+              username: fallbackPlayerData.resolvedProfile.username,
+              bumpkin: fallbackPlayerData.resolvedProfile.bumpkin,
+            },
+            playerEconomy: cfg.offlineMinigame?.() ?? emptySessionMinigame(),
+            actions: cfg.offlineActions,
+            economyMeta: cfg.offlineEconomyMeta,
+            playerData: fallbackPlayerData,
+          };
+
+          setBootstrap(fallbackCtx);
+          setErrorMessage(null);
+          setPhase("ready");
         }
       }
     })();

@@ -14,10 +14,14 @@ export async function getPortalPlayerProfile({
     throw new Error("No portal API URL available");
   }
 
-  const response = await window.fetch(`${base}/portal/${portalId}/player`, {
+  const url = new URL(
+    `/portal/${encodeURIComponent(portalId)}/player`,
+    `${base}/`,
+  );
+
+  const response = await window.fetch(url.toString(), {
     method: "GET",
     headers: {
-      "content-type": "application/json;charset=UTF-8",
       accept: "application/json",
       Authorization: "Bearer " + token,
     },
@@ -69,7 +73,6 @@ export async function getPlayerEconomySession({
   const response = await window.fetch(url.toString(), {
     method: "GET",
     headers: {
-      "content-type": "application/json;charset=UTF-8",
       accept: "application/json",
       Authorization: `Bearer ${token}`,
     },
