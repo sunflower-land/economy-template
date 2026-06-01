@@ -251,33 +251,53 @@ export const MinigamePortalProvider: React.FC<
           );
         }
 
+        // eslint-disable-next-line no-console
+        console.log("[MinigamePortal] bootstrap", {
+          portalId,
+          mainApiUrl: mainApiUrl ?? "(none)",
+          minigamesApiUrl: minigamesApiUrl ?? "(none)",
+          hasJwt: !!jwt,
+        });
+
         let portalProfile: Record<string, unknown> | undefined;
         let session: MinigameSessionResponse | undefined;
-        let portalError: unknown;
-        let sessionError: unknown;
 
         if (mainApiUrl) {
           try {
             portalProfile = await getPortalPlayerProfile({ token: jwt, portalId });
+            // eslint-disable-next-line no-console
+            console.log("[MinigamePortal] portal player profile loaded");
           } catch (error) {
-            portalError = error;
+            // Non-fatal: portal player profile enriches player data but is not required
+            // to boot the app. Log the error and continue with whatever is available.
+            // eslint-disable-next-line no-console
+            console.warn(
+              "[MinigamePortal] Portal player profile unavailable — continuing with JWT data.",
+              {
+                url: `${mainApiUrl}/portal/${portalId}/player`,
+                error: error instanceof Error ? error.message : String(error),
+              },
+            );
           }
         }
 
         if (minigamesApiUrl) {
           try {
             session = await getPlayerEconomySession({ token: jwt });
+            // eslint-disable-next-line no-console
+            console.log("[MinigamePortal] minigame session loaded");
           } catch (error) {
-            sessionError = error;
+            // Non-fatal: minigame session enriches economy data but is not required
+            // to boot the app. Log the error and continue with offline economy.
+            // eslint-disable-next-line no-console
+            console.warn(
+              "[MinigamePortal] Minigame session unavailable — continuing with offline economy.",
+              {
+                url: `${minigamesApiUrl}/data?type=session`,
+                error: error instanceof Error ? error.message : String(error),
+              },
+            );
           }
-        }
-
-        if (!portalProfile && !session) {
-          throw (
-            portalError ??
-            sessionError ??
-            new Error("Unable to load player data from the launch context")
-          );
         }
 
         let playerEconomy = session
