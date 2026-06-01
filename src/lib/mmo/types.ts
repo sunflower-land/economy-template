@@ -18,6 +18,8 @@ export type GuestBumpkinEquipped = {
   suit: string;
   dress: string;
   hat: string;
+  necklace: string;
+  secondaryTool: string;
   wings: string;
   beard: string;
   aura: string;

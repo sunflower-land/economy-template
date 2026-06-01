@@ -13,16 +13,18 @@ const formatter = new Intl.NumberFormat();
 export const NightshadeArcadeHud: React.FC<NightshadeArcadeHudProps> = ({
   extraRavenCoins,
 }) => {
-  const { farmId, farm, playerEconomy } = useMinigameSession();
-  const baseRavenCoins = Number(playerEconomy.balances?.RavenCoin ?? 0);
+  const { farmId, playerData } = useMinigameSession();
+  const baseRavenCoins = Number(playerData.balances.RavenCoin ?? 0);
   const totalRavenCoins = Math.max(0, baseRavenCoins + extraRavenCoins);
-  const coins = Number(playerEconomy.balances?.Coin ?? 0);
-  const gems = Number(playerEconomy.balances?.Gem ?? 0);
+  const coins = Number(playerData.balances.Coin ?? 0);
+  const gems = Number(playerData.balances.Gem ?? 0);
 
   return (
     <HudContainer>
       <div className="absolute left-3 top-3 rounded bg-black/55 px-3 py-2 text-xs text-white">
-        <div className="font-semibold">{farm.username ?? `Farmer #${farmId}`}</div>
+        <div className="font-semibold">
+          {playerData.username ?? `Farmer #${farmId}`}
+        </div>
         <div className="text-[11px] text-[#e6bfd4]">Nightshade Arcade</div>
       </div>
 
