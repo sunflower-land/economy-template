@@ -8,7 +8,6 @@ import { NightshadeArcadeScene } from "./NightshadeArcadeScene";
 import { useMinigameSession } from "lib/portal";
 import { createDefaultGuestBumpkin } from "lib/mmo/defaultGuestBumpkin";
 import type { GuestBumpkinJoin } from "lib/mmo/types";
-import { tokenUriBuilder } from "lib/utils/tokenUriBuilder";
 
 export const NightshadeArcadePhaser: React.FC = () => {
   const { farmId, farm, playerData } = useMinigameSession();
@@ -79,7 +78,6 @@ export const NightshadeArcadePhaser: React.FC = () => {
         source: playerData.resolvedAvatar.source,
         equipped: bumpkin.equipped,
         tokenUri: bumpkin.tokenUri,
-        tokenUriFromEquipped: tokenUriBuilder(bumpkin.equipped),
       });
     }
 
