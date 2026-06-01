@@ -33,17 +33,29 @@ export const NightshadeArcadePhaser: React.FC = () => {
     const avatar = playerData.resolvedAvatar;
     const equipped = avatar.equipped;
 
-    let interpreted: Record<string, string> | undefined;
-    if (!equipped && avatar.tokenUri) {
+    // Prefer parts decoded from the canonical tokenUri over raw API-supplied item names.
+    // interpretTokenUri converts numeric slot IDs → canonical item name strings that are
+    // guaranteed to round-trip correctly through tokenUriBuilder, so the animation URL
+    // BumpkinContainer computes from clothing will match the player's actual bumpkin.
+    // Raw API names can differ in casing/format from local ITEM_IDS keys, causing 0 for
+    // those slots and a wrong URL that results in a 404 → the silhouette never clears.
+    let fromTokenUri: Record<string, string> | undefined;
+    if (avatar.tokenUri) {
       try {
-        interpreted = interpretTokenUri(avatar.tokenUri)
+        fromTokenUri = interpretTokenUri(avatar.tokenUri)
           .equipped as Record<string, string>;
       } catch {
-        interpreted = undefined;
+        fromTokenUri = undefined;
       }
     }
 
-    const resolvedEquipped = equipped ?? interpreted;
+    // Use tokenUri-derived parts when they contain at least one real item; otherwise fall
+    // back to the raw equipped map (handles the case where interpretTokenUri returns only
+    // undefined slots because all IDs are missing from the local ITEM_NAMES registry).
+    const resolvedEquipped =
+      fromTokenUri && Object.values(fromTokenUri).some(Boolean)
+        ? fromTokenUri
+        : equipped;
 
     if (!resolvedEquipped) {
       return createDefaultGuestBumpkin();
@@ -86,6 +98,8 @@ export const NightshadeArcadePhaser: React.FC = () => {
         wings: resolvedEquipped.wings ?? "",
         beard: resolvedEquipped.beard ?? "",
         aura: resolvedEquipped.aura ?? "",
+        necklace: resolvedEquipped.necklace || undefined,
+        secondaryTool: resolvedEquipped.secondaryTool || undefined,
       },
       experience: avatar.experience ?? 0,
       id: avatar.id ?? 0,
