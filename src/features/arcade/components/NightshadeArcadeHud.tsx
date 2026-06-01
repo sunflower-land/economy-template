@@ -6,20 +6,18 @@ import { RoundButton } from "components/ui/RoundButton";
 import { Modal } from "components/ui/Modal";
 import { Panel } from "components/ui/Panel";
 import ravenCoinIcon from "../assets/RavenCoin.webp";
+import coinsIcon from "../assets/coins.webp";
+import gemsIcon from "../assets/gem.webp";
+import flowerIcon from "../assets/flower_token.webp";
 import { PIXEL_SCALE } from "lib/constants";
 import { SUNNYSIDE } from "example-assets/sunnyside";
 import worldIcon from "example-assets/icons/world.png";
-import { CONFIG } from "lib/config";
 
 type NightshadeArcadeHudProps = {
   extraRavenCoins: number;
 };
 
 const formatter = new Intl.NumberFormat();
-const iconBaseUrl = CONFIG.PROTECTED_IMAGE_URL;
-const coinsIcon = `${iconBaseUrl}/icons/coins.webp`;
-const gemsIcon = `${iconBaseUrl}/icons/gem.webp`;
-const flowerIcon = `${iconBaseUrl}/icons/flower_token.webp`;
 
 export const NightshadeArcadeHud: React.FC<NightshadeArcadeHudProps> = ({
   extraRavenCoins,
