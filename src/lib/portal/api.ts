@@ -1,6 +1,55 @@
 import type { MinigameSessionResponse, MinigameActionResponse } from "./types";
 import { PLAYER_ECONOMY_GENERATOR_COLLECTED_ACTION } from "./playerEconomyTypes";
-import { getMinigamesApiUrl } from "./url";
+import { getMinigamesApiUrl, getUrl } from "./url";
+
+export async function getPortalPlayerProfile({
+  token,
+  portalId,
+}: {
+  token: string;
+  portalId: string;
+}): Promise<Record<string, unknown>> {
+  const base = getUrl();
+  if (!base) {
+    throw new Error("No portal API URL available");
+  }
+
+  const response = await window.fetch(`${base}/portal/${portalId}/player`, {
+    method: "GET",
+    headers: {
+      "content-type": "application/json;charset=UTF-8",
+      accept: "application/json",
+      Authorization: "Bearer " + token,
+    },
+  });
+
+  const bodyText = await response.text();
+  let parsed: Record<string, unknown> = {};
+  try {
+    parsed = bodyText ? (JSON.parse(bodyText) as Record<string, unknown>) : {};
+  } catch {
+    throw new Error(bodyText || `Invalid JSON (${response.status})`);
+  }
+
+  if (response.status >= 400) {
+    throw new Error(
+      typeof parsed.error === "string"
+        ? parsed.error
+        : bodyText || `Portal player load failed (${response.status})`,
+    );
+  }
+
+  const farm =
+    (parsed.farm as Record<string, unknown> | undefined) ??
+    ((parsed.data as { farm?: Record<string, unknown> } | undefined)?.farm ??
+      parsed);
+
+  if (!farm || typeof farm !== "object" || Array.isArray(farm)) {
+    throw new Error("Invalid portal player response (missing farm)");
+  }
+
+  return farm;
+}
 
 export async function getPlayerEconomySession({
   token,

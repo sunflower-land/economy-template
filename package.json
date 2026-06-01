@@ -1,11 +1,13 @@
 {
-  "name": "sunflower-land-mini-game-template",
+  "name": "the-nightshade-arcade",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --port 3000 --host",
-    "build": "rm -rf dist && tsc && vite build",
+    "build": "npm run build:hosted",
+    "build:hosted": "rm -rf dist && tsc && vite build --mode hosted",
+    "build:pages": "rm -rf dist && tsc && vite build --mode pages",
     "preview": "vite preview"
   },
   "dependencies": {

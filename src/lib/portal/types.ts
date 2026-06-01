@@ -23,6 +23,46 @@ export type MinigameSessionEconomyMeta = {
   };
 };
 
+export type PortalLaunchContext = {
+  href: string;
+  embedded: boolean;
+  query: Record<string, string>;
+  jwt?: string;
+  network?: string;
+  language?: string;
+  font?: string;
+  apiUrl?: string;
+  minigamesApiUrl?: string;
+};
+
+export type ResolvedAvatarData = {
+  equipped?: Record<string, string>;
+  experience?: number;
+  id?: number;
+  tokenUri?: string;
+  source: "portal" | "session" | "jwt" | "fallback";
+};
+
+export type ResolvedPlayerProfile = {
+  farmId: number;
+  portalId: string;
+  username?: string;
+  balance?: string;
+  coins?: number;
+  inventory?: Record<string, unknown>;
+  bumpkin?: unknown;
+  source: "portal" | "session" | "jwt" | "offline";
+};
+
+export type PortalPlayerData = {
+  launchContext: PortalLaunchContext;
+  tokenClaims: Record<string, unknown> | null;
+  portalProfile?: Record<string, unknown>;
+  minigameSession?: MinigameSessionResponse;
+  resolvedProfile: ResolvedPlayerProfile;
+  resolvedAvatar: ResolvedAvatarData;
+};
+
 export type MinigameSessionResponse = {
   farm: {
     balance: string;
@@ -83,6 +123,7 @@ export type BootstrapContext = {
   actions: Record<string, unknown>;
   /** Session fields used to build player-economy dashboard / editor config. */
   economyMeta?: MinigameSessionEconomyMeta;
+  playerData: PortalPlayerData;
 };
 
 export function resolvePlayerEconomySessionItems(
