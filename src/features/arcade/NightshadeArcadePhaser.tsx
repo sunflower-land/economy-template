@@ -63,7 +63,7 @@ export const NightshadeArcadePhaser: React.FC = () => {
       username: playerData.username,
       balance: farm.balance,
     });
-    game.current.registry.set("id", 0);
+    game.current.registry.set("id", farmId);
 
     return () => {
       game.current?.destroy(true);

@@ -47,17 +47,19 @@ export function decodePortalToken(token: string): {
   username?: string;
 } {
   try {
-    const trimmed = token.trim();
-    if (!trimmed) return {};
-    const parts = trimmed.split(".");
-    if (parts.length < 2) return {};
-    const payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const pad = payload.length % 4;
-    const padded = pad ? payload + "=".repeat(4 - pad) : payload;
-    const json = atob(padded);
-    const decoded = JSON.parse(json) as Record<string, unknown>;
-    const merged = mergePortalJwtPayload(decoded);
-    const farmRaw = merged.farmId;
+    const merged = decodePortalTokenClaims(token);
+    if (!merged) return {};
+    const farmCandidates = [
+      merged.farmId,
+      merged.farmID,
+      merged.id,
+      (merged as Record<string, unknown>).fid,
+      (merged as Record<string, unknown>).farm,
+      (merged as Record<string, unknown>).farm_id,
+    ];
+    const farmRaw = farmCandidates.find(
+      (value) => typeof value === "number" || typeof value === "string",
+    );
     const farmId =
       typeof farmRaw === "number"
         ? farmRaw
@@ -75,5 +77,24 @@ export function decodePortalToken(token: string): {
     };
   } catch {
     return {};
+  }
+}
+
+export function decodePortalTokenClaims(
+  token: string,
+): Record<string, unknown> | null {
+  try {
+    const trimmed = token.trim();
+    if (!trimmed) return null;
+    const parts = trimmed.split(".");
+    if (parts.length < 2) return null;
+    const payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const pad = payload.length % 4;
+    const padded = pad ? payload + "=".repeat(4 - pad) : payload;
+    const json = atob(padded);
+    const decoded = JSON.parse(json) as Record<string, unknown>;
+    return mergePortalJwtPayload(decoded);
+  } catch {
+    return null;
   }
 }
