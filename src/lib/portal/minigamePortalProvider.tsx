@@ -317,6 +317,17 @@ export const MinigamePortalProvider: React.FC<
           minigameSession: session,
           portalProfile,
         });
+        if (import.meta.env?.DEV) {
+          // eslint-disable-next-line no-console
+          console.log("[MinigamePortal] resolved bumpkin pipeline", {
+            resolvedAvatarSource: playerData.resolvedAvatar.source,
+            resolvedAvatarEquipped: playerData.resolvedAvatar.equipped,
+            resolvedAvatarTokenUri: playerData.resolvedAvatar.tokenUri,
+            profileBumpkin: playerData.resolvedProfile.bumpkin,
+            sessionBumpkin: session?.farm.bumpkin,
+            portalProfileBumpkin: asRecord(portalProfile)?.bumpkin,
+          });
+        }
 
         const resolvedFarmId =
           farmId ??
