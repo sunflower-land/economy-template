@@ -1,5 +1,6 @@
 import { createDefaultGuestBumpkin } from "lib/mmo/defaultGuestBumpkin";
 import type { GuestBumpkinJoin } from "lib/mmo/types";
+import { ITEM_IDS, ITEM_NAMES } from "features/game/types/bumpkin";
 import {
   interpretTokenUri,
   tokenUriBuilder,
@@ -52,6 +53,31 @@ function pickText(value: unknown): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
+function normalizeWearable(value: unknown): string | undefined {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return ITEM_NAMES[String(value)];
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    if (ITEM_IDS[trimmed as keyof typeof ITEM_IDS] !== undefined) return trimmed;
+    return ITEM_NAMES[trimmed];
+  }
+
+  const record = asRecord(value);
+  if (!record) return undefined;
+
+  return normalizeWearable(
+    record.name ??
+      record.item ??
+      record.value ??
+      record.id ??
+      record.itemId ??
+      record.tokenId,
+  );
+}
+
 function pickNumber(value: unknown): number | undefined {
   if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value === "string" && value.trim().length > 0) {
@@ -66,7 +92,7 @@ function readEquipped(input: unknown): EquippedRecord {
   if (!record) return {};
   const equipped: EquippedRecord = {};
   for (const key of EQUIPPED_KEYS) {
-    const value = pickText(record[key]);
+    const value = normalizeWearable(record[key]);
     if (value) equipped[key] = value;
   }
   return equipped;
@@ -109,7 +135,9 @@ function resolveBumpkin(raw: unknown): GuestBumpkinJoin | undefined {
   const tokenUri =
     pickText(raw) ??
     pickText(root?.tokenUri) ??
-    pickText(asRecord(root?.properties)?.tokenUri);
+    pickText(root?.tokenURI) ??
+    pickText(asRecord(root?.properties)?.tokenUri) ??
+    pickText(asRecord(root?.properties)?.tokenURI);
 
   const equipped: EquippedRecord = {
     ...parseTokenUri(tokenUri),
