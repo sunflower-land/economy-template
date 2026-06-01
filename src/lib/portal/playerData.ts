@@ -163,6 +163,41 @@ function resolveFarmId(...sources: unknown[]): number {
   return 0;
 }
 
+function resolveAvatarFromSources(input: {
+  portalFarm?: Record<string, unknown>;
+  sessionFarm?: Record<string, unknown>;
+  claimsRecord?: Record<string, unknown>;
+}): {
+  bumpkin: GuestBumpkinJoin | undefined;
+  source: PortalPlayerData["resolvedAvatar"]["source"];
+} {
+  const portal = input.portalFarm;
+  const session = input.sessionFarm;
+  const claims = input.claimsRecord;
+
+  const candidates: Array<{
+    source: PortalPlayerData["resolvedAvatar"]["source"];
+    raw: unknown;
+  }> = [
+    { source: "portal", raw: portal?.bumpkin },
+    { source: "portal", raw: portal?.avatar },
+    { source: "portal", raw: portal?.tokenUri },
+    { source: "session", raw: session?.bumpkin },
+    { source: "jwt", raw: claims?.bumpkin },
+    { source: "jwt", raw: claims?.avatar },
+    { source: "jwt", raw: claims?.tokenUri },
+  ];
+
+  for (const candidate of candidates) {
+    const resolved = resolveBumpkin(candidate.raw);
+    if (resolved) {
+      return { bumpkin: resolved, source: candidate.source };
+    }
+  }
+
+  return { bumpkin: undefined, source: "fallback" };
+}
+
 function resolveLaunchContext(input: {
   jwt: string;
   portalId?: string;
@@ -215,13 +250,6 @@ export function buildPortalPlayerData(input: {
       : tokenClaims
         ? "jwt"
         : "offline";
-  const avatarSource = input.portalProfile
-    ? "portal"
-    : input.minigameSession
-      ? "session"
-      : tokenClaims
-        ? "jwt"
-        : "fallback";
   const resolvedFarmId = resolveFarmId(
     { farmId: decoded.farmId },
     sessionFarm,
@@ -253,16 +281,19 @@ export function buildPortalPlayerData(input: {
       pickNumber(asRecord(portalFarm?.inventory)?.Coin),
     inventory: asRecord(portalFarm?.inventory),
     bumpkin:
-      input.minigameSession?.farm.bumpkin ??
       portalFarm?.bumpkin ??
+      portalFarm?.avatar ??
+      input.minigameSession?.farm.bumpkin ??
       claimsRecord?.bumpkin,
     source: profileSource,
   };
 
-  const resolvedBumpkin =
-    resolveBumpkin(resolvedProfile.bumpkin) ??
-    resolveBumpkin(claimsRecord?.avatar) ??
-    resolveBumpkin(claimsRecord?.tokenUri);
+  const { bumpkin: resolvedBumpkin, source: resolvedAvatarSource } =
+    resolveAvatarFromSources({
+      portalFarm,
+      sessionFarm,
+      claimsRecord,
+    });
   const fallbackBumpkin = createDefaultGuestBumpkin();
   const bumpkin = resolvedBumpkin ?? fallbackBumpkin;
 
@@ -277,7 +308,7 @@ export function buildPortalPlayerData(input: {
       experience: bumpkin.experience,
       id: bumpkin.id,
       tokenUri: bumpkin.tokenUri,
-      source: resolvedBumpkin ? avatarSource : "fallback",
+      source: resolvedAvatarSource,
     },
   };
 }
