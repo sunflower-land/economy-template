@@ -13,12 +13,10 @@ import {
   tokenUriBuilder,
   type BumpkinParts,
 } from "lib/utils/tokenUriBuilder";
-import { decodePortalToken } from "lib/portal/decodePortalToken";
 
 export const NightshadeArcadePhaser: React.FC = () => {
-  const { farm, farmId, jwt, playerData } = useMinigameSession();
+  const { farm, farmId, playerData } = useMinigameSession();
   const game = useRef<Game>(undefined);
-  const tokenMeta = useMemo(() => decodePortalToken(jwt), [jwt]);
 
   const scene = "nightshade-arcade";
   const scenes: any[] = [Preloader, NightshadeArcadeScene];
@@ -88,6 +86,23 @@ export const NightshadeArcadePhaser: React.FC = () => {
     };
   }, [playerData.resolvedAvatar]);
 
+  const profileBumpkin = useMemo(() => {
+    const candidate = playerData.resolvedProfile.bumpkin;
+    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
+      return bumpkin;
+    }
+    const equipped = (candidate as { equipped?: unknown }).equipped;
+    if (
+      equipped &&
+      typeof equipped === "object" &&
+      !Array.isArray(equipped) &&
+      Object.keys(equipped as Record<string, unknown>).length > 0
+    ) {
+      return candidate;
+    }
+    return bumpkin;
+  }, [bumpkin, playerData.resolvedProfile.bumpkin]);
+
   useEffect(() => {
     const config: Phaser.Types.Core.GameConfig = {
       type: AUTO,
@@ -132,9 +147,8 @@ export const NightshadeArcadePhaser: React.FC = () => {
 
     game.current.registry.set("initialScene", scene);
     game.current.registry.set("gameState", {
-      bumpkin,
-      username:
-        playerData.resolvedProfile.username ?? farm.username ?? tokenMeta.username,
+      bumpkin: profileBumpkin,
+      username: playerData.resolvedProfile.username ?? farm.username,
       balance: playerData.resolvedProfile.balance ?? farm.balance,
     });
     game.current.registry.set("id", farmId);
@@ -149,7 +163,7 @@ export const NightshadeArcadePhaser: React.FC = () => {
     farmId,
     playerData.resolvedProfile.balance,
     playerData.resolvedProfile.username,
-    tokenMeta.username,
+    profileBumpkin,
   ]);
 
   const ref = useRef<HTMLDivElement>(null);

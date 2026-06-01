@@ -48,6 +48,7 @@ export type ResolvedPlayerProfile = {
   portalId: string;
   username?: string;
   balance?: string;
+  coins?: number;
   inventory?: Record<string, unknown>;
   bumpkin?: unknown;
   source: "portal" | "session" | "jwt" | "offline";
