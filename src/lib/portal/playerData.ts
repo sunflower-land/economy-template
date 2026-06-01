@@ -56,7 +56,7 @@ function pickNumber(value: unknown): number | undefined {
   if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value === "string" && value.trim().length > 0) {
     const parsed = Number(value);
-    if (Number.isFinite(parsed)) return parsed;
+    if (Number.isFinite(parsed)) return Number(parsed);
   }
   return undefined;
 }
@@ -157,7 +157,7 @@ function resolveFarmId(...sources: unknown[]): number {
           : typeof candidate === "string"
             ? Number(candidate)
             : undefined;
-      if (Number.isFinite(parsed)) return parsed;
+      if (Number.isFinite(parsed)) return Number(parsed);
     }
   }
   return 0;
@@ -247,11 +247,10 @@ export function buildPortalPlayerData(input: {
       claimsRecord?.preferred_username,
     ),
     balance: firstString(sessionFarm?.balance, portalFarm?.balance),
-    coins: pickNumber(
-      input.minigameSession?.playerEconomy?.balances?.Coin,
-      portalFarm?.coins,
-      asRecord(portalFarm?.inventory)?.Coin,
-    ),
+    coins:
+      pickNumber(input.minigameSession?.playerEconomy?.balances?.Coin) ??
+      pickNumber(portalFarm?.coins) ??
+      pickNumber(asRecord(portalFarm?.inventory)?.Coin),
     inventory: asRecord(portalFarm?.inventory),
     bumpkin:
       input.minigameSession?.farm.bumpkin ??
