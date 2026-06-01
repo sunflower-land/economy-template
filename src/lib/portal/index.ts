@@ -9,4 +9,3 @@ export * from "./sessionProvider";
 export * from "./minigamePortalProvider";
 export * from "./playerData";
 export * from "./exit";
-export * from "./playerData";
