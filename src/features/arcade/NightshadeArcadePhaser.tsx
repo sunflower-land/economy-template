@@ -25,6 +25,30 @@ type SessionBumpkin = {
   tokenUri?: string;
 };
 
+function firstString(...values: unknown[]): string | undefined {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+  return undefined;
+}
+
+function firstNumber(...values: unknown[]): number | undefined {
+  for (const value of values) {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === "string" && value.trim()) {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+  }
+  return undefined;
+}
+
 function asRecord(value: unknown): Record<string, unknown> | undefined {
   if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
   return value as Record<string, unknown>;
@@ -83,44 +107,124 @@ function toEquippedRecord(value: unknown): Record<string, string> | undefined {
   return Object.keys(flattened).length > 0 ? flattened : undefined;
 }
 
+function normalizeSessionBumpkin(value: unknown): SessionBumpkin | undefined {
+  if (typeof value === "string") {
+    const parsed = asJsonRecord(value);
+    if (parsed) {
+      return normalizeSessionBumpkin(parsed);
+    }
+
+    const tokenUri = value.trim();
+    return tokenUri ? { tokenUri } : undefined;
+  }
+
+  const direct = asRecord(value);
+  if (!direct) return undefined;
+
+  const nestedBumpkin = asRecord(direct.bumpkin);
+  const profile = asRecord(direct.profile);
+  const profileBumpkin = asRecord(profile?.bumpkin);
+
+  const equipped =
+    toEquippedRecord(direct) ??
+    toEquippedRecord(nestedBumpkin) ??
+    toEquippedRecord(profile) ??
+    toEquippedRecord(profileBumpkin);
+  const tokenUri = firstString(
+    direct.tokenUri,
+    direct.tokenURI,
+    direct.uri,
+    nestedBumpkin?.tokenUri,
+    nestedBumpkin?.tokenURI,
+    nestedBumpkin?.uri,
+    profile?.tokenUri,
+    profile?.tokenURI,
+    profile?.uri,
+    profileBumpkin?.tokenUri,
+    profileBumpkin?.tokenURI,
+    profileBumpkin?.uri,
+  );
+  const experience = firstNumber(
+    direct.experience,
+    nestedBumpkin?.experience,
+    profile?.experience,
+    profileBumpkin?.experience,
+  );
+  const id = firstNumber(
+    direct.id,
+    direct.bumpkinId,
+    nestedBumpkin?.id,
+    nestedBumpkin?.bumpkinId,
+    profile?.id,
+    profile?.bumpkinId,
+    profileBumpkin?.id,
+    profileBumpkin?.bumpkinId,
+  );
+
+  if (!equipped && !tokenUri && experience === undefined && id === undefined) {
+    return undefined;
+  }
+
+  return { equipped, experience, id, tokenUri };
+}
+
+function mergeSessionBumpkins(
+  ...candidates: Array<SessionBumpkin | undefined>
+): SessionBumpkin | undefined {
+  const merged = candidates.reduce<SessionBumpkin>(
+    (acc, candidate) => {
+      if (!candidate) return acc;
+
+      return {
+        equipped: acc.equipped ?? candidate.equipped,
+        experience: acc.experience ?? candidate.experience,
+        id: acc.id ?? candidate.id,
+        tokenUri: acc.tokenUri ?? candidate.tokenUri,
+      };
+    },
+    {},
+  );
+
+  if (
+    !merged.equipped &&
+    !merged.tokenUri &&
+    merged.experience === undefined &&
+    merged.id === undefined
+  ) {
+    return undefined;
+  }
+
+  return merged;
+}
+
 function extractSessionBumpkinFromJwt(jwt: string): SessionBumpkin | undefined {
   const claims = decodePortalTokenClaims(jwt);
   if (!claims) return undefined;
 
   const candidates: unknown[] = [
     claims.bumpkin,
+    claims.profile,
+    asRecord(claims.profile)?.bumpkin,
     asRecord(claims.farm)?.bumpkin,
     asRecord(claims.state)?.bumpkin,
     asRecord(asRecord(claims.state)?.farm)?.bumpkin,
     asRecord(claims.game)?.bumpkin,
     asRecord(asRecord(claims.game)?.farm)?.bumpkin,
     asRecord(claims.user)?.bumpkin,
+    asRecord(asRecord(claims.user)?.profile)?.bumpkin,
     asRecord(claims.properties)?.bumpkin,
+    asRecord(claims.properties)?.profile,
+    asRecord(asRecord(claims.properties)?.profile)?.bumpkin,
     asRecord(asRecord(claims.properties)?.state)?.bumpkin,
     asRecord(asRecord(asRecord(claims.properties)?.state)?.farm)?.bumpkin,
+    claims.tokenUri,
+    asRecord(claims.user)?.tokenUri,
+    asRecord(claims.properties)?.tokenUri,
   ];
 
-  for (const candidate of candidates) {
-    const bumpkin = asJsonRecord(candidate);
-    if (!bumpkin) continue;
-
-    const equipped = toEquippedRecord(bumpkin);
-    if (equipped) {
-      return {
-        equipped,
-        experience:
-          typeof bumpkin.experience === "number" ? bumpkin.experience : undefined,
-        id: typeof bumpkin.id === "number" ? bumpkin.id : undefined,
-        tokenUri: typeof bumpkin.tokenUri === "string" ? bumpkin.tokenUri : undefined,
-      };
-    }
-
-    if (typeof bumpkin.tokenUri === "string") {
-      return { tokenUri: bumpkin.tokenUri };
-    }
-  }
-
-  return undefined;
+  return mergeSessionBumpkins(
+    ...candidates.map((candidate) => normalizeSessionBumpkin(candidate)),
+  );
 }
 
 export const NightshadeArcadePhaser: React.FC = () => {
@@ -131,8 +235,10 @@ export const NightshadeArcadePhaser: React.FC = () => {
   const scene = "nightshade-arcade";
   const scenes: any[] = [Preloader, NightshadeArcadeScene];
   const bumpkin = useMemo<GuestBumpkinJoin>(() => {
-    const sessionBumpkin =
-      (farm.bumpkin as SessionBumpkin | undefined) ?? extractSessionBumpkinFromJwt(jwt);
+    const sessionBumpkin = mergeSessionBumpkins(
+      normalizeSessionBumpkin(farm.bumpkin),
+      extractSessionBumpkinFromJwt(jwt),
+    );
     const equipped = toEquippedRecord(sessionBumpkin);
 
     let interpreted: Record<string, string> | undefined;
