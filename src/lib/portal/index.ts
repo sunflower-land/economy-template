@@ -7,4 +7,5 @@ export * from "./closePortal";
 export * from "./runtimeHelpers";
 export * from "./sessionProvider";
 export * from "./minigamePortalProvider";
+export * from "./playerData";
 export * from "./exit";

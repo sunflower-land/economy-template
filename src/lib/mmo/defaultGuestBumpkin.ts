@@ -14,6 +14,8 @@ const GUEST_EQUIPPED: GuestBumpkinEquipped = {
   suit: "",
   dress: "",
   hat: "",
+  necklace: "",
+  secondaryTool: "",
   wings: "",
   beard: "",
   aura: "",
