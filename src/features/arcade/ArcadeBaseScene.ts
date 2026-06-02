@@ -540,7 +540,7 @@ export abstract class ArcadeBaseScene extends Phaser.Scene {
   }
 
   public get username() {
-    return this.gameState.username;
+    return this.registry.get("username") as string | undefined;
   }
 
   public get selectedItem() {
