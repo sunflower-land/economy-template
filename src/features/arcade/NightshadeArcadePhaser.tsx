@@ -8,33 +8,76 @@ import { NightshadeArcadeScene } from "./NightshadeArcadeScene";
 import { useMinigameSession } from "lib/portal";
 import { createDefaultGuestBumpkin } from "lib/mmo/defaultGuestBumpkin";
 import type { GuestBumpkinJoin } from "lib/mmo/types";
+import { tokenUriBuilder, type BumpkinParts } from "lib/utils/tokenUriBuilder";
 
 export const NightshadeArcadePhaser: React.FC = () => {
   const { farmId, farm, playerData } = useMinigameSession();
+  const username = playerData.resolvedProfile.username ?? undefined;
   const game = useRef<Game>(undefined);
 
   const scene = "nightshade-arcade";
   const scenes: any[] = [Preloader, NightshadeArcadeScene];
   const bumpkin = useMemo<GuestBumpkinJoin>(() => {
-    const fallback = createDefaultGuestBumpkin();
-    const resolved = playerData.resolvedAvatar;
-    const equipped = resolved?.equipped ?? {};
-    // eslint-disable-next-line no-console
-    console.log("[BumpkinDiag] farm.bumpkin from session:", JSON.stringify(farm?.bumpkin));
-    const result: GuestBumpkinJoin = {
-      ...fallback,
-      equipped: {
-        ...fallback.equipped,
-        ...equipped,
-      },
-      experience: resolved?.experience ?? fallback.experience,
-      id: resolved?.id ?? fallback.id,
-      tokenUri: resolved?.tokenUri ?? fallback.tokenUri,
+    const b = farm?.bumpkin as
+      | { equipped?: Record<string, string>; experience?: number; id?: number }
+      | undefined;
+
+    const equipped = b?.equipped;
+
+    if (!equipped) {
+      return createDefaultGuestBumpkin();
+    }
+
+    // Build BumpkinParts from the equipped record
+    const parts: BumpkinParts = {
+      background: (equipped.background || undefined) as BumpkinParts["background"],
+      body: (equipped.body || undefined) as BumpkinParts["body"],
+      hair: (equipped.hair || undefined) as BumpkinParts["hair"],
+      shirt: (equipped.shirt || undefined) as BumpkinParts["shirt"],
+      pants: (equipped.pants || undefined) as BumpkinParts["pants"],
+      shoes: (equipped.shoes || undefined) as BumpkinParts["shoes"],
+      tool: (equipped.tool || undefined) as BumpkinParts["tool"],
+      hat: (equipped.hat || undefined) as BumpkinParts["hat"],
+      necklace: (equipped.necklace || undefined) as BumpkinParts["necklace"],
+      secondaryTool: (equipped.secondaryTool || undefined) as BumpkinParts["secondaryTool"],
+      coat: (equipped.coat || undefined) as BumpkinParts["coat"],
+      onesie: (equipped.onesie || undefined) as BumpkinParts["onesie"],
+      suit: (equipped.suit || undefined) as BumpkinParts["suit"],
+      wings: (equipped.wings || undefined) as BumpkinParts["wings"],
+      dress: (equipped.dress || undefined) as BumpkinParts["dress"],
+      beard: (equipped.beard || undefined) as BumpkinParts["beard"],
+      aura: (equipped.aura || undefined) as BumpkinParts["aura"],
     };
-    // eslint-disable-next-line no-console
-    console.log("[BumpkinDiag] final bumpkin equipped going to registry:", JSON.stringify(result.equipped));
-    return result;
-  }, [playerData.resolvedAvatar, farm?.bumpkin]);
+
+    const tokenParts = tokenUriBuilder(parts);
+
+    return {
+      equipped: {
+        background: equipped.background ?? "",
+        body: equipped.body ?? "",
+        hair: equipped.hair ?? "",
+        shoes: equipped.shoes ?? "",
+        pants: equipped.pants ?? "",
+        tool: equipped.tool ?? "",
+        shirt: equipped.shirt ?? "",
+        coat: equipped.coat ?? "",
+        onesie: equipped.onesie ?? "",
+        suit: equipped.suit ?? "",
+        dress: equipped.dress ?? "",
+        hat: equipped.hat ?? "",
+        necklace: equipped.necklace ?? "",
+        secondaryTool: equipped.secondaryTool ?? "",
+        wings: equipped.wings ?? "",
+        beard: equipped.beard ?? "",
+        aura: equipped.aura ?? "",
+      },
+      experience: b?.experience ?? 0,
+      id: b?.id ?? 0,
+      skills: {},
+      tokenUri: tokenParts,
+      achievements: {},
+    };
+  }, [farm?.bumpkin]);
 
   useEffect(() => {
     const config: Phaser.Types.Core.GameConfig = {
@@ -81,6 +124,7 @@ export const NightshadeArcadePhaser: React.FC = () => {
     game.current.registry.set("initialScene", scene);
     game.current.registry.set("gameState", {
       bumpkin,
+      username,
     });
     game.current.registry.set("id", farmId);
 
