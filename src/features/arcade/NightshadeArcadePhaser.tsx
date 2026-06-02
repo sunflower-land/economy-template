@@ -11,7 +11,8 @@ import type { GuestBumpkinJoin } from "lib/mmo/types";
 import { tokenUriBuilder, type BumpkinParts } from "lib/utils/tokenUriBuilder";
 
 export const NightshadeArcadePhaser: React.FC = () => {
-  const { farmId, farm } = useMinigameSession();
+  const { farmId, farm, playerData } = useMinigameSession();
+  const username = playerData.resolvedProfile.username ?? undefined;
   const game = useRef<Game>(undefined);
 
   const scene = "nightshade-arcade";
@@ -123,6 +124,7 @@ export const NightshadeArcadePhaser: React.FC = () => {
     game.current.registry.set("initialScene", scene);
     game.current.registry.set("gameState", {
       bumpkin,
+      username,
     });
     game.current.registry.set("id", farmId);
 
