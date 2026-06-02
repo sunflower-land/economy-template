@@ -555,7 +555,7 @@ export abstract class ArcadeBaseScene extends Phaser.Scene {
     x,
     y,
     farmId,
-    username: _username,
+    username,
     faction,
     isCurrentPlayer,
     clothing,
@@ -609,6 +609,22 @@ export abstract class ArcadeBaseScene extends Phaser.Scene {
       faction,
       onClick: defaultClick,
     });
+
+    if (!npc) {
+      const color = faction
+        ? (FACTION_NAME_COLORS[faction as keyof typeof FACTION_NAME_COLORS] ?? "#fff")
+        : "#fff";
+
+      const nameTag = this.createPlayerText({
+        x: 0,
+        y: 0,
+        text: username ? username : `#${farmId}`,
+        color,
+      });
+      nameTag.setShadow(1, 1, "#161424", 0, false, true);
+      nameTag.name = "nameTag";
+      entity.add(nameTag);
+    }
 
 
     // Is current player
