@@ -1,0 +1,72 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - NA-test
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build:pages
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
+          CI: false
+
+      - name: Snapshot Pages dist
+        run: mv dist dist-pages
+
+      - name: Build hosted upload dist
+        run: npm run build:hosted
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
+          CI: false
+
+      - name: Snapshot hosted upload dist
+        run: mv dist hosted-upload-dist
+
+      - name: Upload hosted upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hosted-upload-dist
+          path: hosted-upload-dist
+          if-no-files-found: error
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist-pages
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

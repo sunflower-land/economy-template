@@ -1,0 +1,271 @@
+Portal Minigame Migration Plan for Coding Agent
+
+Purpose
+- This document is written as a handoff to a coding agent that will perform the implementation work in `ispankzombiez/economy-template` on branch `NA-test`.
+- Treat the game list below as the implementation checklist.
+- Prefer verified repository facts over assumptions.
+- Where source details are missing or not directly discoverable, preserve that uncertainty in code comments, TODOs, and PR notes rather than inventing mappings.
+
+Repositories and branches
+- Source reference repo: `ispankzombiez/Sunflower-Land` on branch `portal`
+- Target implementation repo: `ispankzombiez/economy-template` on branch `NA-test`
+
+Primary objective
+- Expand the Nightshade Arcade in the target repo so the portal/minigame migration work is organized, incremental, and agent-executable.
+- Use the checklist below to drive implementation order, status tracking, and code organization.
+- Preserve already working target games.
+- Add or improve shared abstractions so future games can be added with less duplication.
+
+Implementation checklist
+- [x] Poker
+- [x] Blackjack
+- [x] Go Fish
+- [x] Uno
+- [x] Solitaire
+- [ ] Goblin Invaders
+- [ ] Tetris
+- [ ] Barley Breaker
+- [ ] Pac-Man
+- [ ] Frogger
+
+Confirmed current target state
+- `src/features/arcade/NightshadeArcadeApp.tsx`
+  - Main arcade hub entrypoint in target.
+  - Already switches between multiple playable games and hub views.
+- `src/features/arcade/data/hubConfig.ts`
+  - Already lists the implementation checklist above.
+  - Current status is accurate for the five completed and five incomplete games.
+- Already implemented local playable games in target:
+  - `src/features/arcade/games/poker/PokerGame.tsx`
+  - `src/features/arcade/games/blackjack/BlackjackGame.tsx`
+  - `src/features/arcade/games/gofish/GoFishGame.tsx`
+  - `src/features/arcade/games/uno/UnoGame.tsx`
+  - `src/features/arcade/games/solitaire/SolitaireGame.tsx`
+- Shared target infrastructure already available:
+  - `src/features/arcade/games/shared/CardFace.tsx`
+  - `src/features/arcade/games/shared/deck.ts`
+  - `src/components/popups/PopupProvider.tsx`
+  - `src/components/popups/popupRegistry.tsx`
+  - `src/lib/popups.ts`
+  - `src/lib/gameStore.ts`
+  - `src/lib/portal/sessionProvider.tsx`
+  - `src/lib/portal/processAction.ts`
+  - `src/lib/portal/closePortal.ts`
+  - `src/components/PhaserGame.tsx`
+  - `src/lib/audio.ts`
+
+Confirmed source architecture relevant to migration
+- Source dashboard and minigame shell:
+  - `src/features/minigame/MinigameDashboard.tsx`
+- Source shared minigame component directory:
+  - `src/features/minigame/components/*`
+- Source shared minigame logic directory:
+  - `src/features/minigame/lib/*`
+- Confirmed notable source support files:
+  - `src/features/minigame/lib/loadMinigameDashboard.ts`
+  - `src/features/minigame/lib/minigameSessionApi.ts`
+  - `src/features/minigame/lib/processMinigameAction.ts`
+  - `src/features/minigame/lib/minigameDashboardTypes.ts`
+  - `src/features/minigame/lib/types.ts`
+  - `src/features/minigame/lib/extractProductionSlots.ts`
+  - `src/features/minigame/lib/minigameConfigHelpers.ts`
+  - `src/features/minigame/lib/canAffordShopItem.ts`
+  - `src/features/minigame/lib/minigameTokenIcons.ts`
+- Source generic portal wrapper:
+  - `src/features/world/ui/portals/Portal.tsx`
+- Confirmed source per-game wrapper example:
+  - `src/features/world/ui/portals/Poker.tsx`
+- Other representative source wrappers found during research:
+  - `src/features/world/ui/portals/ChickenRescue.tsx`
+  - `src/features/world/ui/portals/CropsAndChickens.tsx`
+  - `src/features/world/ui/portals/FruitDash.tsx`
+  - `src/features/world/ui/portals/MineWhack.tsx`
+  - `src/features/world/ui/portals/Memory.tsx`
+  - `src/features/world/ui/portals/AprilFools.tsx`
+  - `src/features/world/ui/portals/ChaacsTemple.tsx`
+- Source game-state provider:
+  - `src/features/game/GameProvider.tsx`
+- Source minigame id registry:
+  - `src/features/game/types/minigames.ts`
+
+Critical architectural conclusion for the coding agent
+- The source repo is not a simple one-to-one copy target.
+- Source minigames are tied to a broader app shell with XState, auth context, farm state, reward flows, and iframe portal launching.
+- The target repo uses a lighter architecture with local React state, nanostores, popup helpers, and portal/session helpers.
+- Therefore, implementation should not blindly copy source files.
+- Instead, port concepts and behaviors into target-native abstractions.
+
+Important uncertainty the coding agent must respect
+- The following minigame ids are known in source research and/or target checklist:
+  - `goblin-invaders`
+  - `tetris`
+  - `barley-breaker`
+  - `pac-man`
+  - `frogger`
+- However, this research did not confirm local source gameplay files for those five in the inspected `Sunflower-Land` branch.
+- Treat them as unresolved with respect to source implementation location.
+- Do not fabricate direct file mappings such as `mini-games/tetris/TetrisGame.tsx` unless the agent independently verifies them.
+- If those games are externally hosted portal games rather than in-repo implementations, prefer portal/session integration over fake local copies.
+
+Required agent behavior
+- Use the checklist as the source of truth for progress tracking.
+- Preserve completed implementations.
+- Refactor only when it reduces duplication and does not destabilize existing games.
+- Leave notes/TODOs where source parity is uncertain.
+- If implementing unresolved games locally, do so in a clean target-native structure rather than pretending they came from verified source files.
+- If implementing unresolved games as hosted/portal games, build the minimal target-side infrastructure needed to support that cleanly.
+
+Recommended migration strategy
+1. Stabilize and normalize the existing arcade game architecture.
+2. Extract shared arcade patterns used by the five completed card games.
+3. Introduce a scalable game registration mechanism so the remaining checklist items can be added with minimal `if`-chain growth.
+4. Add a status/metadata system that reflects checklist progress in code.
+5. Implement unresolved games one by one, choosing either:
+   - local target-native implementation, or
+   - portal-hosted integration,
+   based on what the agent can verify from source.
+6. Update hub UX so completed items become playable and unresolved items remain clearly marked.
+
+Concrete coding tasks
+Task 1: Replace hard-coded arcade branching with a registry
+- Current file: `src/features/arcade/NightshadeArcadeApp.tsx`
+- Problem:
+  - The component currently uses many explicit `if (activePlayableGame === ...)` branches.
+  - This will become harder to maintain as the checklist grows.
+- Goal:
+  - Introduce a registry/config-based mapping from game id to playable component or launch behavior.
+- Suggested outcome:
+  - A central game registry module under `src/features/arcade/` or `src/features/arcade/games/`.
+  - The registry should support:
+    - local component-backed games,
+    - future portal-backed games,
+    - metadata for status, labels, and reward behavior.
+
+Task 2: Keep `hubConfig.ts` aligned with the checklist
+- Current file: `src/features/arcade/data/hubConfig.ts`
+- Goal:
+  - Ensure the checklist and hub metadata stay synchronized.
+  - If useful, split metadata into reusable types or registries.
+- Requirement:
+  - Preserve current completed/incomplete status unless implementation changes justify updating it.
+
+Task 3: Extract reusable game shell patterns
+- Existing repeated concerns across completed games:
+  - back button behavior
+  - token reward callback behavior
+  - start/restart UX
+  - status text layout
+  - consistent page shell styling
+- Goal:
+  - Create shared helper components/hooks/utilities where appropriate.
+- Warning:
+  - Do not over-abstract unique game logic.
+  - Share shells, controls, and reward plumbing before sharing game rules.
+
+Task 4: Decide and implement support path for unresolved games
+Checklist items:
+- [ ] Goblin Invaders
+- [ ] Tetris
+- [ ] Barley Breaker
+- [ ] Pac-Man
+- [ ] Frogger
+
+For each unresolved item, the coding agent must determine one of two paths:
+Path A: local implementation in target
+- Create target-local implementation under `src/features/arcade/games/<game>/`
+- Add any needed shared helpers
+- Register the game in the arcade registry
+- Update hub status to playable only when complete
+
+Path B: portal-hosted integration in target
+- Reuse or extend target portal/session utilities:
+  - `src/lib/portal/sessionProvider.tsx`
+  - `src/lib/portal/processAction.ts`
+  - `src/lib/portal/closePortal.ts`
+- Introduce a clean target-side launcher flow for hosted games
+- Ensure closing, reward synchronization, and popup interactions are coherent
+- Mark the game playable only after the integration path is real and testable
+
+Task 5: Introduce an explicit implementation-status surface for agent work
+- Add a developer-facing progress structure in code or docs so future agent passes can quickly see:
+  - complete games
+  - in-progress games
+  - unresolved-source games
+  - portal-backed vs local-backed games
+- This can be done in code comments, a registry field, or a supporting doc.
+
+Task 6: Preserve and document uncertainty
+- For the unresolved five games, add comments indicating:
+  - source minigame id is known,
+  - local source implementation was not verified in this research handoff,
+  - chosen implementation path in target is based on verified target needs plus whatever the coding agent can confirm.
+
+Suggested target file structure direction
+- `src/features/arcade/NightshadeArcadeApp.tsx`
+  - keep as top-level hub container
+- `src/features/arcade/data/hubConfig.ts`
+  - keep hub-facing metadata or slim it down if registry takes over
+- `src/features/arcade/games/shared/`
+  - shared card/game UI primitives
+- `src/features/arcade/games/<game>/`
+  - per-game implementation folders
+- Consider adding:
+  - `src/features/arcade/games/registry.ts`
+  - `src/features/arcade/types.ts`
+  - `src/features/arcade/components/ArcadeGameShell.tsx`
+  - `src/features/arcade/components/ArcadeHubCard.tsx`
+  - `src/features/arcade/lib/` for shared arcade logic
+
+Game-by-game notes for the coding agent
+- Poker
+  - Already implemented locally.
+  - Use as an example of reward wiring and hub registration.
+- Blackjack
+  - Already implemented locally.
+- Go Fish
+  - Already implemented locally.
+- Uno
+  - Already implemented locally.
+- Solitaire
+  - Already implemented locally.
+- Goblin Invaders
+  - Source implementation location not verified.
+  - Treat as unresolved.
+  - Choose local or portal-backed path only after verification.
+- Tetris
+  - Source implementation location not verified.
+  - Treat as unresolved.
+- Barley Breaker
+  - Source implementation location not verified.
+  - Treat as unresolved.
+- Pac-Man
+  - Source implementation location not verified.
+  - Treat as unresolved.
+- Frogger
+  - Source implementation location not verified.
+  - Treat as unresolved.
+
+Source-to-target mapping guidance
+- Source concepts worth porting:
+  - minigame metadata-driven loading
+  - portal launch abstraction
+  - reward/claim lifecycle
+  - session/economy action processing
+  - inventory/shop/production abstractions where relevant
+- Source concepts that should not be copied blindly:
+  - XState `gameService` coupling
+  - full auth/farm context assumptions
+  - source-only panel/layout primitives tied to Sunflower-Land app shell
+
+Definition of done for this handoff
+- The coding agent should consider this migration handoff successful when:
+  - the arcade hub is registry-driven or otherwise scalable,
+  - all five completed games remain working,
+  - unresolved checklist items have an explicit implementation path,
+  - any newly completed games are actually playable from the hub,
+  - status metadata reflects reality,
+  - uncertainty is documented instead of hidden.
+
+If additional source verification becomes available
+- Update this checklist and the registry/documentation accordingly.
+- Prefer verified evidence over assumptions from this handoff.

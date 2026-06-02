@@ -1,76 +1,72 @@
-# Sunflower Land — mini-game template
+# The Nightshade Arcade
 
-Starter repo for **browser mini-games** set in the Sunflower Land universe. **Default sample in `App.tsx`:** **`ChickenRescueApp`** (`examples/chickenRescue/`) — Phaser game with portal JWT + Minigames session. Other samples live under **`examples/`** (e.g. **`ui-resources/`** dashboard); swap the import in **`App.tsx`** to try them. Portal helpers in **`src/lib/portal/`** match **Chicken Rescue v2** (`VITE_MINIGAMES_API_URL`, `GET /data?type=session`, `POST /action`). Includes **Nanostores**, **`lib/api.ts`** stubs, and **Howler** audio.
+The Nightshade Arcade is a minigame hub where players earn **NIGHT** tokens and redeem them for prizes.
+
+This repository starts from the economy-template and now includes:
+
+- A branded base shell for **The Nightshade Arcade**
+- A foundational minigame hub UI to browse games and view token balance
+- A placeholder reward + prize redemption flow for economy iteration
+- A migration queue scaffold for future game ports from `ispankzombiez/Sunflower-Land` (`portal` branch)
 
 ## Quick start
 
 ```bash
-yarn install
-yarn dev
+npm install
+npm run dev
 ```
 
-Open the URL Vite prints (port **3000** by default). Copy `.env.sample` → `.env` if you need custom animation or image hosts.
+## Current foundation
 
-### Private `images` repo (icons, resources, SFX)
+- **App entry:** `src/App.tsx`
+- **Arcade shell:** `src/features/arcade/NightshadeArcadeApp.tsx`
+- **Hub config:** `src/features/arcade/data/hubConfig.ts`
+- **Portal migration placeholders:** `src/features/arcade/portal/portingPlan.ts`
+- **Arcade migration handoff (canonical):** `docs/arcade-migration-handoff.txt`
 
-This template imports art from the **[sunflower-land/images](https://github.com/sunflower-land/images)** (or your fork) checkout **next to** this folder:
+## Next migration step
 
-```text
-workspace/
-  images/                    ← asset repo (assets/icons, assets/resources, assets/sfx, …)
-  sunflower-land-template/   ← this template
-```
+Use `portalPortTargets` in `src/features/arcade/portal/portingPlan.ts` to track and prioritize imports from Sunflower-Land's `portal` branch as each minigame is moved into `src/features/arcade/games`.
 
-`vite.config.ts` maps `@sl-assets` → `../images/assets`. If your clone lives elsewhere, change that path.
+## Hosted upload testing (Sunflower Land uploader)
 
-## Agents (Cursor, Copilot, etc.)
+For manual uploader testing at:
 
-Short machine-oriented rules: **[AGENTS.md](AGENTS.md)**. Full detail lives in **`docs/`** below.
+- `https://Nightshade-Arcade.economies.sunflower-land.com`
 
-## What to read next
+Use this flow:
 
-All contributor and **AI-agent-oriented** guidelines live in **`docs/`**:
+1. Run `npm install`
+2. Run `npm run build:hosted`
+3. Upload the contents of `dist/` (not the project root)
 
-| Doc | Purpose |
-|-----|---------|
-| [docs/README.md](docs/README.md) | Index of every guideline file |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Folder layout, when to split components |
-| [docs/TECHNICAL.md](docs/TECHNICAL.md) | React ↔ Phaser, store, popups, Howler, icons |
-| [docs/GAME_SPEC.md](docs/GAME_SPEC.md) | **Your** game rules — edit this as you design |
-| [docs/DESIGN.md](docs/DESIGN.md) | Sunflower Land tone, loops, economy philosophy |
-| [docs/UI_UX_GUIDELINES.md](docs/UI_UX_GUIDELINES.md) | Panels, labels, mobile-first UI |
-| [docs/API.md](docs/API.md) | Builder guide: iframe JWT, three Minigames APIs, example actions; stub profile (`src/lib/api.ts`) |
-| [docs/ART.md](docs/ART.md) | Pixel-art-only rules |
-| [docs/AUDIO.md](docs/AUDIO.md) | Sound style + config |
-| [docs/VALIDATION.md](docs/VALIDATION.md) | **Manual** pre-ship checklist (win / retry / playable) |
+## Hosted upload files from GitHub Actions
 
-## What to change first
+When CI runs on `NA-test`, it now creates two separate outputs:
 
-1. **`docs/GAME_SPEC.md`** — win/lose, resources, copy.
-2. **`src/lib/api.ts`** — replace stubs with real calls; keep `PlayerProfile` shape or extend it.
-3. **`src/config/icons.config.ts`**, **`src/config/resources.config.ts`**, **`src/config/audio.config.ts`** — extend the bundled `@sl-assets` imports (requires sibling **`images`** repo; see above).
-4. **`src/lib/popups.ts`** + **`src/components/popups/popupRegistry.tsx`** — add modal ids and bodies.
-5. **`src/game/`** — add scenes and containers; keep heavy UI in React per `TECHNICAL.md`.
-6. **`src/examples/boring/`** — default **`BoringApp`** in **`App.tsx`** (see `src/examples/README.md`). Replace **`App`** with your own shell when you outgrow the demo.
+- **GitHub Pages artifact** (for Pages deploy): built from `npm run build:pages`
+- **`hosted-upload-dist` artifact** (for provider upload): built from `npm run build:hosted`
 
-## Included UI primitives
+Download **`hosted-upload-dist`** from the workflow run artifacts.  
+After extraction, upload the extracted folder contents directly to the provider so `index.html` stays at the top level with `assets/` alongside it.
 
-`src/components/ui/`: **Panel**, **Button**, **Label**, **Input**, **Icon** (URL-driven). If you need another control, add a small primitive alongside these (see `ARCHITECTURE.md`).
+Notes:
 
-## Popups
+- `dist/index.html` is the required entry file at site root for the uploader.
+- Hosted builds use root base `/`, so static paths resolve as `/assets`, `/game`, `/world`.
+- The active app entry (`src/App.tsx`) does not use `BrowserRouter`; embedded game flows use in-memory routing where needed, avoiding deep-link refresh routing issues for hosted uploads.
+- Runtime minigame session uses:
+  - `?jwt=...` (required for authenticated live economy session)
+  - `?minigamesApiUrl=...` (optional runtime override)
+  - `VITE_MINIGAMES_API_URL` (build-time fallback when query param is absent)
 
-- **One modal at a time.** `PopupProvider` wraps the app in `src/main.tsx`.
-- Open from React: `usePopup().open("welcome")` or `popupSingleton.open("hint", { message: "..." })`.
-- Open from Phaser: `import { popupSingleton } from "lib/popupSingleton"` (same API).
+## GitHub Pages preview build
 
-Registry: `src/components/popups/popupRegistry.tsx`.
-
-## Build
+Use this build target for GitHub Pages preview/testing:
 
 ```bash
-yarn build
+npm run build:pages
 ```
 
-## Licence
-
-This template may diverge from the original Sunflower Land app licence. Check the repository’s `LICENSE` or organisation policy before redistributing.
+- Pages builds use base `/economy-template/` so JS/CSS/assets and `/game` + `/world` files resolve under the repository subpath.
+- The GitHub Pages workflow (`.github/workflows/deploy.yml`) runs `npm run build:pages` and deploys the `dist/` artifact.
