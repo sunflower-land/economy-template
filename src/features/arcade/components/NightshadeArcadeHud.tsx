@@ -112,10 +112,8 @@ export const NightshadeArcadeHud: React.FC<NightshadeArcadeHudProps> = ({
       <HudContainer>
         <div
           id="travel"
-          className="fixed z-50 flex relative justify-center cursor-pointer hover:img-highlight"
+          className="absolute bottom-3 left-3 z-50 flex justify-center cursor-pointer hover:img-highlight"
           style={{
-            left: `${PIXEL_SCALE * 3}px`,
-            bottom: `${PIXEL_SCALE * 3}px`,
             width: `${PIXEL_SCALE * 22}px`,
             height: `${PIXEL_SCALE * 23}px`,
           }}

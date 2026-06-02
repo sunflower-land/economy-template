@@ -10,15 +10,15 @@ import { createDefaultGuestBumpkin } from "lib/mmo/defaultGuestBumpkin";
 import type { GuestBumpkinJoin } from "lib/mmo/types";
 
 export const NightshadeArcadePhaser: React.FC = () => {
-  const { farmId, farm } = useMinigameSession();
+  const { farmId, farm, playerData } = useMinigameSession();
   const game = useRef<Game>(undefined);
 
   const scene = "nightshade-arcade";
   const scenes: any[] = [Preloader, NightshadeArcadeScene];
   const bumpkin = useMemo<GuestBumpkinJoin>(() => {
     const fallback = createDefaultGuestBumpkin();
-    const b = farm?.bumpkin as { equipped?: Record<string, string> } | undefined;
-    const equipped = b?.equipped ?? {};
+    const resolved = playerData.resolvedAvatar;
+    const equipped = resolved?.equipped ?? {};
     // eslint-disable-next-line no-console
     console.log("[BumpkinDiag] farm.bumpkin from session:", JSON.stringify(farm?.bumpkin));
     const result: GuestBumpkinJoin = {
@@ -27,11 +27,14 @@ export const NightshadeArcadePhaser: React.FC = () => {
         ...fallback.equipped,
         ...equipped,
       },
+      experience: resolved?.experience ?? fallback.experience,
+      id: resolved?.id ?? fallback.id,
+      tokenUri: resolved?.tokenUri ?? fallback.tokenUri,
     };
     // eslint-disable-next-line no-console
     console.log("[BumpkinDiag] final bumpkin equipped going to registry:", JSON.stringify(result.equipped));
     return result;
-  }, [farm?.bumpkin]);
+  }, [playerData.resolvedAvatar, farm?.bumpkin]);
 
   useEffect(() => {
     const config: Phaser.Types.Core.GameConfig = {
