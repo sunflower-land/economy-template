@@ -13,7 +13,8 @@ export const NightshadeArcadePhaser: React.FC = () => {
   const username = playerData?.resolvedProfile?.username ?? String(farmId);
   const game = useRef<Game>(undefined);
 
-  console.log("[BumpkinDiag] raw bumpkin into registry:", JSON.stringify(bumpkin));
+  console.log("[BumpkinDiag] farm.bumpkin raw:", JSON.stringify(farm?.bumpkin));
+  console.log("[BumpkinDiag] full farm:", JSON.stringify(farm));
 
   const scene = "nightshade-arcade";
   const scenes: any[] = [Preloader, NightshadeArcadeScene];
