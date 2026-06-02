@@ -8,6 +8,10 @@ import coinsIcon from "../assets/coins.webp";
 import gemsIcon from "../assets/gem.webp";
 import flowerIcon from "../assets/flower_token.webp";
 import { PortalBasketButton } from "./PortalBasketButton";
+import { requestClosePortal } from "lib/portal/closePortal";
+import { SUNNYSIDE } from "example-assets/sunnyside";
+import { PIXEL_SCALE } from "lib/constants";
+import worldIcon from "example-assets/icons/world.png";
 
 type NightshadeArcadeHudProps = {
   extraRavenCoins: number;
@@ -106,6 +110,39 @@ export const NightshadeArcadeHud: React.FC<NightshadeArcadeHudProps> = ({
   return (
     <>
       <HudContainer>
+        <div
+          id="travel"
+          className="fixed z-50 flex relative justify-center cursor-pointer hover:img-highlight"
+          style={{
+            left: `${PIXEL_SCALE * 3}px`,
+            bottom: `${PIXEL_SCALE * 3}px`,
+            width: `${PIXEL_SCALE * 22}px`,
+            height: `${PIXEL_SCALE * 23}px`,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            requestClosePortal();
+          }}
+        >
+          <img
+            src={SUNNYSIDE.ui.round_button}
+            className="absolute"
+            style={{
+              width: `${PIXEL_SCALE * 22}px`,
+            }}
+          />
+          <img
+            src={worldIcon}
+            style={{
+              width: `${PIXEL_SCALE * 12}px`,
+              left: `${PIXEL_SCALE * 5}px`,
+              top: `${PIXEL_SCALE * 4}px`,
+            }}
+            className="absolute"
+          />
+        </div>
+
         <div className="absolute left-3 top-3 rounded bg-black/55 px-3 py-2 text-xs text-white">
           <div className="font-semibold">
             {playerData.resolvedProfile.username ?? `Farmer #${farmId}`}

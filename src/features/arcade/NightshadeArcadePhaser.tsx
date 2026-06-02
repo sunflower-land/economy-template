@@ -19,13 +19,18 @@ export const NightshadeArcadePhaser: React.FC = () => {
     const fallback = createDefaultGuestBumpkin();
     const b = farm?.bumpkin as { equipped?: Record<string, string> } | undefined;
     const equipped = b?.equipped ?? {};
-    return {
+    // eslint-disable-next-line no-console
+    console.log("[BumpkinDiag] farm.bumpkin from session:", JSON.stringify(farm?.bumpkin));
+    const result: GuestBumpkinJoin = {
       ...fallback,
       equipped: {
         ...fallback.equipped,
         ...equipped,
       },
     };
+    // eslint-disable-next-line no-console
+    console.log("[BumpkinDiag] final bumpkin equipped going to registry:", JSON.stringify(result.equipped));
+    return result;
   }, [farm?.bumpkin]);
 
   useEffect(() => {

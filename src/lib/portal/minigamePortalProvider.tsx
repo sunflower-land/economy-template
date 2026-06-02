@@ -323,6 +323,12 @@ export const MinigamePortalProvider: React.FC<
           minigameSession: session,
           portalProfile,
         });
+        // eslint-disable-next-line no-console
+        console.log("[BumpkinDiag] raw portalProfile:", JSON.stringify(portalProfile));
+        // eslint-disable-next-line no-console
+        console.log("[BumpkinDiag] raw session.farm:", JSON.stringify(session?.farm));
+        // eslint-disable-next-line no-console
+        console.log("[BumpkinDiag] resolvedAvatar:", JSON.stringify(playerData.resolvedAvatar));
         if (import.meta.env?.DEV) {
           // eslint-disable-next-line no-console
           console.log("[MinigamePortal] resolved bumpkin pipeline", {
@@ -376,6 +382,8 @@ export const MinigamePortalProvider: React.FC<
           playerData,
         };
         if (!cancelled) {
+          // eslint-disable-next-line no-console
+          console.log("[BumpkinDiag] bootstrap.farm.bumpkin:", JSON.stringify(ctx.farm.bumpkin));
           setBootstrap(ctx);
           setPhase("ready");
         }
