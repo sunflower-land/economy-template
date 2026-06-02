@@ -10,25 +10,23 @@ import { createDefaultGuestBumpkin } from "lib/mmo/defaultGuestBumpkin";
 import type { GuestBumpkinJoin } from "lib/mmo/types";
 
 export const NightshadeArcadePhaser: React.FC = () => {
-  const { farmId, farm, playerData } = useMinigameSession();
+  const { farmId, farm } = useMinigameSession();
   const game = useRef<Game>(undefined);
 
   const scene = "nightshade-arcade";
   const scenes: any[] = [Preloader, NightshadeArcadeScene];
   const bumpkin = useMemo<GuestBumpkinJoin>(() => {
     const fallback = createDefaultGuestBumpkin();
-    const avatar = playerData.resolvedAvatar;
+    const b = farm?.bumpkin as { equipped?: Record<string, string> } | undefined;
+    const equipped = b?.equipped ?? {};
     return {
       ...fallback,
       equipped: {
         ...fallback.equipped,
-        ...avatar.equipped,
+        ...equipped,
       },
-      experience: avatar.experience ?? fallback.experience,
-      id: avatar.id ?? fallback.id,
-      tokenUri: avatar.tokenUri ?? fallback.tokenUri,
     };
-  }, [playerData.resolvedAvatar]);
+  }, [farm?.bumpkin]);
 
   useEffect(() => {
     const config: Phaser.Types.Core.GameConfig = {
@@ -72,27 +70,16 @@ export const NightshadeArcadePhaser: React.FC = () => {
 
     game.current = new Game(config);
 
-    if (import.meta.env?.DEV) {
-      // eslint-disable-next-line no-console
-      console.log("[NightshadeArcadePhaser] final render bumpkin", {
-        source: playerData.resolvedAvatar.source,
-        equipped: bumpkin.equipped,
-        tokenUri: bumpkin.tokenUri,
-      });
-    }
-
     game.current.registry.set("initialScene", scene);
     game.current.registry.set("gameState", {
       bumpkin,
-      username: playerData.resolvedProfile.username,
-      balance: farm.balance,
     });
     game.current.registry.set("id", farmId);
 
     return () => {
       game.current?.destroy(true);
     };
-  }, [bumpkin, farm.balance, farmId, playerData.resolvedProfile.username]);
+  }, [bumpkin, farmId]);
 
   const ref = useRef<HTMLDivElement>(null);
 
