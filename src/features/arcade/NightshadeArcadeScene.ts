@@ -4,7 +4,7 @@ import stairsDown from "./assets/stairs_down.png";
 import ravenCoinIcon from "./assets/RavenCoin.webp";
 import type { SceneId } from "features/world/sceneIds";
 import { isTouchDevice } from "features/world/lib/device";
-import { BaseScene } from "features/world/scenes/BaseScene";
+import { ArcadeBaseScene } from "./ArcadeBaseScene";
 import { translate } from "lib/i18n/translate";
 import VirtualJoystick from "phaser3-rex-plugins/plugins/virtualjoystick.js";
 import { minigamesEventEmitter } from "./lib/minigamesEvents";
@@ -12,7 +12,7 @@ import { nightshadeArcadeEvents } from "./lib/nightshadeArcadeEvents";
 import { PortalNPC } from "./lib/PortalNPC";
 import { getNightshadeArcadeSpawn } from "./lib/spawns";
 
-export class NightshadeArcadeScene extends BaseScene {
+export class NightshadeArcadeScene extends ArcadeBaseScene {
   sceneId: SceneId = "nightshade-arcade" as SceneId;
 
   constructor() {
