@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { Game, AUTO } from "phaser";
 import NinePatchPlugin from "phaser3-rex-plugins/plugins/ninepatch-plugin.js";
 import VirtualJoystickPlugin from "phaser3-rex-plugins/plugins/virtualjoystick-plugin.js";
@@ -6,39 +6,17 @@ import VirtualJoystickPlugin from "phaser3-rex-plugins/plugins/virtualjoystick-p
 import { Preloader } from "features/world/scenes/Preloader";
 import { NightshadeArcadeScene } from "./NightshadeArcadeScene";
 import { useMinigameSession } from "lib/portal";
-import type { GuestBumpkinJoin } from "lib/mmo/types";
-import { tokenUriBuilder, type BumpkinParts } from "lib/utils/tokenUriBuilder";
 
 export const NightshadeArcadePhaser: React.FC = () => {
   const { farmId, farm, playerData } = useMinigameSession();
+  const bumpkin = (farm as any)?.bumpkin;
   const username = playerData?.resolvedProfile?.username ?? undefined;
   const game = useRef<Game>(undefined);
 
+  console.log("[BumpkinDiag] farm.bumpkin raw:", JSON.stringify(bumpkin));
+
   const scene = "nightshade-arcade";
   const scenes: any[] = [Preloader, NightshadeArcadeScene];
-  const bumpkin = useMemo<GuestBumpkinJoin>(() => {
-    const b = farm?.bumpkin as
-      | { equipped?: Record<string, string>; experience?: number; id?: number }
-      | undefined;
-
-    const equipped = b?.equipped ?? {};
-
-    // Only include slots that have a real item name; omit empty/missing values
-    const cleanEquipped = Object.fromEntries(
-      Object.entries(equipped).filter(([, v]) => !!v)
-    ) as GuestBumpkinJoin["equipped"];
-
-    const tokenParts = tokenUriBuilder(cleanEquipped as unknown as BumpkinParts);
-
-    return {
-      equipped: cleanEquipped,
-      experience: b?.experience ?? 0,
-      id: b?.id ?? 0,
-      skills: {},
-      tokenUri: tokenParts,
-      achievements: {},
-    };
-  }, [farm?.bumpkin]);
 
   useEffect(() => {
     const config: Phaser.Types.Core.GameConfig = {
@@ -83,10 +61,8 @@ export const NightshadeArcadePhaser: React.FC = () => {
     game.current = new Game(config);
 
     game.current.registry.set("initialScene", scene);
-    game.current.registry.set("gameState", {
-      bumpkin,
-      username,
-    });
+    game.current.registry.set("gameState", { bumpkin });
+    game.current.registry.set("username", username);
     game.current.registry.set("id", farmId);
 
     return () => {
