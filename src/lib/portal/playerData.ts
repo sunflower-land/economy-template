@@ -158,7 +158,7 @@ function resolveBumpkin(raw: unknown): GuestBumpkinJoin | undefined {
     equipped: {
       ...fallback.equipped,
       ...Object.fromEntries(
-        EQUIPPED_KEYS.map((key) => [key, equipped[key] ?? ""]),
+        EQUIPPED_KEYS.filter((key) => equipped[key]).map((key) => [key, equipped[key]]),
       ),
     },
     experience: pickNumber(root?.experience) ?? fallback.experience,
