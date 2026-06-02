@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { SQUARE_WIDTH } from "lib/constants";
 import { getAnimationApiBase } from "lib/portal/url";
+import { tokenUriBuilder, type BumpkinParts } from "lib/utils/tokenUriBuilder";
 
 /** Default farmer look → `tokenUriBuilder` output used by the animation CDN. */
 const DEFAULT_BUMPKIN_TOKEN = "32_1_5_13_18_22_23";
@@ -42,7 +43,14 @@ export class BumpkinContainer extends Phaser.GameObjects.Container {
   ) {
     super(scene, x, y);
     this.clothing = options?.clothing ?? { updatedAt: 0 };
-    this.tokenParts = options?.tokenParts ?? DEFAULT_BUMPKIN_TOKEN;
+    const derivedTokenParts = tokenUriBuilder(
+      this.clothing as BumpkinClothing & BumpkinParts,
+    );
+    this.tokenParts =
+      options?.tokenParts ??
+      (derivedTokenParts !== "0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0"
+        ? derivedTokenParts
+        : DEFAULT_BUMPKIN_TOKEN);
     if (options?.direction) this.direction = options.direction;
 
     scene.physics.add.existing(this);
