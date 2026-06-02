@@ -65,25 +65,39 @@ export const NightshadeArcadeHud: React.FC<NightshadeArcadeHudProps> = ({
 }) => {
   const { farmId, playerEconomy, farm, playerData } = useMinigameSession();
   const profileInventory = playerData.resolvedProfile.inventory;
-  const readAmount = (value: unknown) => {
-    const amount = Number(value ?? 0);
-    return Number.isFinite(amount) ? amount : 0;
-  };
-  const readInventoryAmount = (token: string) =>
-    readAmount(profileInventory?.[token]);
 
-  const baseRavenCoins = readAmount(
-    playerEconomy.balances?.RavenCoin ?? readInventoryAmount("RavenCoin"),
+  const readOptionalAmount = (value: unknown) => {
+    if (value === null || value === undefined || value === "") {
+      return undefined;
+    }
+    const amount = Number(value);
+    return Number.isFinite(amount) ? amount : undefined;
+  };
+  const pickAmount = (...values: unknown[]) => {
+    for (const value of values) {
+      const parsed = readOptionalAmount(value);
+      if (parsed !== undefined) {
+        return parsed;
+      }
+    }
+    return 0;
+  };
+  const readInventoryAmount = (token: string) => profileInventory?.[token];
+
+  const baseRavenCoins = pickAmount(
+    readInventoryAmount("RavenCoin"),
+    playerEconomy.balances?.RavenCoin,
   );
   const totalRavenCoins = Math.max(0, baseRavenCoins + extraRavenCoins);
-  const flowers = readAmount(playerData.resolvedProfile.balance ?? farm.balance);
-  const coins = readAmount(
+  const flowers = pickAmount(playerData.resolvedProfile.balance, farm.balance);
+  const coins = pickAmount(
     playerData.resolvedProfile.coins ??
-      playerEconomy.balances?.Coin ??
       readInventoryAmount("Coin"),
+    playerEconomy.balances?.Coin,
   );
-  const gems = readAmount(
-    playerEconomy.balances?.Gem ?? readInventoryAmount("Gem"),
+  const gems = pickAmount(
+    readInventoryAmount("Gem"),
+    playerEconomy.balances?.Gem,
   );
   const [showInventory, setShowInventory] = useState(false);
   const visibleInventoryEntries = useMemo(() => {

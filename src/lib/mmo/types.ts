@@ -23,6 +23,8 @@ export type GuestBumpkinEquipped = {
   wings: string;
   beard: string;
   aura: string;
+  necklace?: string;
+  secondaryTool?: string;
 };
 
 export type GuestBumpkinJoin = {
