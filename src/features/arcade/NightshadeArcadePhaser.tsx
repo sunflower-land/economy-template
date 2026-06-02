@@ -10,10 +10,10 @@ import { useMinigameSession } from "lib/portal";
 export const NightshadeArcadePhaser: React.FC = () => {
   const { farmId, farm, playerData } = useMinigameSession();
   const bumpkin = (farm as any)?.bumpkin;
-  const username = playerData?.resolvedProfile?.username ?? undefined;
+  const username = playerData?.resolvedProfile?.username ?? String(farmId);
   const game = useRef<Game>(undefined);
 
-  console.log("[BumpkinDiag] farm.bumpkin raw:", JSON.stringify(bumpkin));
+  console.log("[BumpkinDiag] raw bumpkin into registry:", JSON.stringify(bumpkin));
 
   const scene = "nightshade-arcade";
   const scenes: any[] = [Preloader, NightshadeArcadeScene];
@@ -62,13 +62,13 @@ export const NightshadeArcadePhaser: React.FC = () => {
 
     game.current.registry.set("initialScene", scene);
     game.current.registry.set("gameState", { bumpkin });
-    game.current.registry.set("username", username);
     game.current.registry.set("id", farmId);
+    game.current.registry.set("username", username);
 
     return () => {
       game.current?.destroy(true);
     };
-  }, [bumpkin, farmId]);
+  }, [bumpkin, farmId, username]);
 
   const ref = useRef<HTMLDivElement>(null);
 
