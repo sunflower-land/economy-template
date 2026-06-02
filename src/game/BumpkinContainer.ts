@@ -3,9 +3,6 @@ import { SQUARE_WIDTH } from "lib/constants";
 import { getAnimationApiBase } from "lib/portal/url";
 import { tokenUriBuilder, type BumpkinParts } from "lib/utils/tokenUriBuilder";
 
-/** Default farmer look → `tokenUriBuilder` output used by the animation CDN. */
-const DEFAULT_BUMPKIN_TOKEN = "32_1_5_13_18_22_23";
-
 function animationBaseUrl(): string {
   return getAnimationApiBase();
 }
@@ -46,11 +43,7 @@ export class BumpkinContainer extends Phaser.GameObjects.Container {
     const derivedTokenParts = tokenUriBuilder(
       this.clothing as BumpkinClothing & BumpkinParts,
     );
-    this.tokenParts =
-      options?.tokenParts ??
-      (derivedTokenParts !== "0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0"
-        ? derivedTokenParts
-        : DEFAULT_BUMPKIN_TOKEN);
+    this.tokenParts = options?.tokenParts ?? derivedTokenParts;
     if (options?.direction) this.direction = options.direction;
 
     scene.physics.add.existing(this);
