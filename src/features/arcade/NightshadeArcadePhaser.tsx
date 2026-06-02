@@ -5,14 +5,9 @@ import VirtualJoystickPlugin from "phaser3-rex-plugins/plugins/virtualjoystick-p
 
 import { Preloader } from "features/world/scenes/Preloader";
 import { NightshadeArcadeScene } from "./NightshadeArcadeScene";
-import { createDefaultGuestBumpkin } from "lib/mmo/defaultGuestBumpkin";
 import { useMinigameSession } from "lib/portal";
+import { createDefaultGuestBumpkin } from "lib/mmo/defaultGuestBumpkin";
 import type { GuestBumpkinJoin } from "lib/mmo/types";
-import {
-  interpretTokenUri,
-  tokenUriBuilder,
-  type BumpkinParts,
-} from "lib/utils/tokenUriBuilder";
 
 function isTechnicalLabel(value: string, farmId: number): boolean {
   const normalized = value.trim();
@@ -24,12 +19,13 @@ function isTechnicalLabel(value: string, farmId: number): boolean {
 }
 
 export const NightshadeArcadePhaser: React.FC = () => {
-  const { farm, farmId, playerData } = useMinigameSession();
+  const { farmId, farm, playerData } = useMinigameSession();
   const game = useRef<Game>(undefined);
 
   const scene = "nightshade-arcade";
   const scenes: any[] = [Preloader, NightshadeArcadeScene];
   const bumpkin = useMemo<GuestBumpkinJoin>(() => {
+    const fallback = createDefaultGuestBumpkin();
     const avatar = playerData.resolvedAvatar;
     const equipped = avatar.equipped;
 
@@ -82,6 +78,7 @@ export const NightshadeArcadePhaser: React.FC = () => {
     };
 
     return {
+      ...fallback,
       equipped: {
         background: resolvedEquipped.background ?? "",
         body: resolvedEquipped.body ?? "",
@@ -100,12 +97,12 @@ export const NightshadeArcadePhaser: React.FC = () => {
         aura: resolvedEquipped.aura ?? "",
         necklace: resolvedEquipped.necklace || undefined,
         secondaryTool: resolvedEquipped.secondaryTool || undefined,
+        ...fallback.equipped,
+        ...avatar.equipped,
       },
-      experience: avatar.experience ?? 0,
-      id: avatar.id ?? 0,
-      skills: {},
-      tokenUri: avatar.tokenUri ?? tokenUriBuilder(parts),
-      achievements: {},
+      experience: avatar.experience ?? fallback.experience,
+      id: avatar.id ?? fallback.id,
+      tokenUri: avatar.tokenUri ?? fallback.tokenUri,
     };
   }, [playerData.resolvedAvatar]);
   const resolvedUsername = useMemo(() => {
@@ -169,11 +166,22 @@ export const NightshadeArcadePhaser: React.FC = () => {
 
     game.current = new Game(config);
 
+    if (import.meta.env?.DEV) {
+      // eslint-disable-next-line no-console
+      console.log("[NightshadeArcadePhaser] final render bumpkin", {
+        source: playerData.resolvedAvatar.source,
+        equipped: bumpkin.equipped,
+        tokenUri: bumpkin.tokenUri,
+      });
+    }
+
     game.current.registry.set("initialScene", scene);
     game.current.registry.set("gameState", {
       bumpkin,
       username: resolvedUsername,
       balance: playerData.resolvedProfile.balance ?? farm.balance,
+      username: playerData.resolvedProfile.username,
+      balance: farm.balance,
     });
     game.current.registry.set("id", farmId);
 
@@ -187,6 +195,7 @@ export const NightshadeArcadePhaser: React.FC = () => {
     playerData.resolvedProfile.balance,
     resolvedUsername,
   ]);
+  }, [bumpkin, farm.balance, farmId, playerData.resolvedProfile.username]);
 
   const ref = useRef<HTMLDivElement>(null);
 

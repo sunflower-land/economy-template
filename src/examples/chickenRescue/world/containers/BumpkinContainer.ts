@@ -160,8 +160,8 @@ export class BumpkinContainer extends Phaser.GameObjects.Container {
 
   private async loadSprites(scene: Phaser.Scene) {
     const keyName = tokenUriBuilder(this.clothing);
-    this.idleSpriteKey = `${keyName}-bumpkin-idle-sheet`;
-    this.walkingSpriteKey = `${keyName}-bumpkin-walking-sheet`;
+    this.idleSpriteKey = keyName;
+    this.walkingSpriteKey = keyName;
     this.idleAnimationKey = `${keyName}-bumpkin-idle`;
     this.walkingAnimationKey = `${keyName}-bumpkin-walking`;
     this.digAnimationKey = `${keyName}-bumpkin-dig`;
@@ -182,6 +182,8 @@ export class BumpkinContainer extends Phaser.GameObjects.Container {
         this.faceLeft();
       }
 
+      this.createIdleAnimation();
+      this.createWalkingAnimation();
       this.sprite.play(this.idleAnimationKey, true);
 
       if (this.silhouette?.active) {
@@ -190,10 +192,10 @@ export class BumpkinContainer extends Phaser.GameObjects.Container {
 
       this.ready = true;
     } else {
-      const url = getAnimationUrl(this.clothing, "idle_small");
+      const url = getAnimationUrl(this.clothing, ["idle", "walking"]);
       const idleLoader = scene.load.spritesheet(this.idleSpriteKey, url, {
-        frameWidth: 20,
-        frameHeight: 19,
+        frameWidth: 96,
+        frameHeight: 64,
       });
 
       idleLoader.once(Phaser.Loader.Events.COMPLETE, () => {
@@ -221,6 +223,7 @@ export class BumpkinContainer extends Phaser.GameObjects.Container {
         }
 
         this.createIdleAnimation();
+        this.createWalkingAnimation();
         this.sprite.play(this.idleAnimationKey as string, true);
 
         this.ready = true;
@@ -234,17 +237,6 @@ export class BumpkinContainer extends Phaser.GameObjects.Container {
 
     if (scene.textures.exists(this.walkingSpriteKey)) {
       this.createWalkingAnimation();
-    } else {
-      const url = getAnimationUrl(this.clothing, "walking_small");
-      const walkingLoader = scene.load.spritesheet(this.walkingSpriteKey, url, {
-        frameWidth: 20,
-        frameHeight: 19,
-      });
-
-      walkingLoader.on(Phaser.Loader.Events.COMPLETE, () => {
-        this.createWalkingAnimation();
-        walkingLoader.removeAllListeners();
-      });
     }
 
     // If the texture already exists, we can use it immediately
@@ -307,16 +299,17 @@ export class BumpkinContainer extends Phaser.GameObjects.Container {
     });
   }
 
-  private createIdleAnimation() {
+  private createIdleAnimation(start = 0, end = 8) {
     if (!this.scene || !this.scene.anims) return;
+    if (this.scene.anims.exists(this.idleAnimationKey as string)) return;
 
     this.scene.anims.create({
       key: this.idleAnimationKey,
       frames: this.scene.anims.generateFrameNumbers(
         this.idleSpriteKey as string,
         {
-          start: 0,
-          end: 8,
+          start,
+          end,
         },
       ),
       repeat: -1,
@@ -358,16 +351,17 @@ export class BumpkinContainer extends Phaser.GameObjects.Container {
     });
   }
 
-  private createWalkingAnimation() {
+  private createWalkingAnimation(start = 9, end = 16) {
     if (!this.scene || !this.scene.anims) return;
+    if (this.scene.anims.exists(this.walkingAnimationKey as string)) return;
 
     this.scene.anims.create({
       key: this.walkingAnimationKey,
       frames: this.scene.anims.generateFrameNumbers(
         this.walkingSpriteKey as string,
         {
-          start: 0,
-          end: 7,
+          start,
+          end,
         },
       ),
       repeat: -1,

@@ -251,13 +251,15 @@ export const MinigamePortalProvider: React.FC<
           );
         }
 
-        // eslint-disable-next-line no-console
-        console.log("[MinigamePortal] bootstrap", {
-          portalId,
-          mainApiUrl: mainApiUrl ?? "(none)",
-          minigamesApiUrl: minigamesApiUrl ?? "(none)",
-          hasJwt: !!jwt,
-        });
+        if (import.meta.env?.DEV) {
+          // eslint-disable-next-line no-console
+          console.log("[MinigamePortal] bootstrap", {
+            portalId,
+            mainApiUrl: mainApiUrl ?? "(none)",
+            minigamesApiUrl: minigamesApiUrl ?? "(none)",
+            hasJwt: !!jwt,
+          });
+        }
 
         let portalProfile: Record<string, unknown> | undefined;
         let session: MinigameSessionResponse | undefined;
@@ -265,8 +267,10 @@ export const MinigamePortalProvider: React.FC<
         if (mainApiUrl) {
           try {
             portalProfile = await getPortalPlayerProfile({ token: jwt, portalId });
-            // eslint-disable-next-line no-console
-            console.log("[MinigamePortal] portal player profile loaded");
+            if (import.meta.env?.DEV) {
+              // eslint-disable-next-line no-console
+              console.log("[MinigamePortal] portal player profile loaded");
+            }
           } catch (error) {
             // Non-fatal: portal player profile enriches player data but is not required
             // to boot the app. Log the error and continue with whatever is available.
@@ -284,8 +288,10 @@ export const MinigamePortalProvider: React.FC<
         if (minigamesApiUrl) {
           try {
             session = await getPlayerEconomySession({ token: jwt });
-            // eslint-disable-next-line no-console
-            console.log("[MinigamePortal] minigame session loaded");
+            if (import.meta.env?.DEV) {
+              // eslint-disable-next-line no-console
+              console.log("[MinigamePortal] minigame session loaded");
+            }
           } catch (error) {
             // Non-fatal: minigame session enriches economy data but is not required
             // to boot the app. Log the error and continue with offline economy.
@@ -317,6 +323,17 @@ export const MinigamePortalProvider: React.FC<
           minigameSession: session,
           portalProfile,
         });
+        if (import.meta.env?.DEV) {
+          // eslint-disable-next-line no-console
+          console.log("[MinigamePortal] resolved bumpkin pipeline", {
+            resolvedAvatarSource: playerData.resolvedAvatar.source,
+            resolvedAvatarEquipped: playerData.resolvedAvatar.equipped,
+            resolvedAvatarTokenUri: playerData.resolvedAvatar.tokenUri,
+            profileBumpkin: playerData.resolvedProfile.bumpkin,
+            sessionBumpkin: session?.farm.bumpkin,
+            portalProfileBumpkin: asRecord(portalProfile)?.bumpkin,
+          });
+        }
 
         const resolvedFarmId =
           farmId ??
@@ -334,21 +351,22 @@ export const MinigamePortalProvider: React.FC<
             ...(session?.farm ?? { balance: "0" }),
             balance:
               firstString(
-                session?.farm.balance,
                 playerData.resolvedProfile.balance,
+                session?.farm.balance,
                 portalFarm?.balance,
               ) ?? "0",
             username:
               firstString(
                 playerData.resolvedProfile.username,
+                session?.farm.username,
                 portalFarm?.username,
                 portalFarm?.displayName,
                 portalFarm?.name,
                 session?.farm.username,
               ) ?? undefined,
             bumpkin:
-              session?.farm.bumpkin ??
               playerData.resolvedProfile.bumpkin ??
+              session?.farm.bumpkin ??
               portalFarm?.bumpkin,
           },
           playerEconomy,
@@ -364,8 +382,42 @@ export const MinigamePortalProvider: React.FC<
         }
       } catch (e) {
         if (!cancelled) {
-          setErrorMessage(e instanceof Error ? e.message : String(e));
-          setPhase("error");
+          const fallbackJwt = getJwt() ?? "";
+          const decoded = decodePortalToken(fallbackJwt);
+          const fallbackPortalId =
+            decoded.portalId ?? (CONFIG.PORTAL_APP ?? "").trim();
+          const fallbackPlayerData = buildPortalPlayerData({
+            jwt: fallbackJwt,
+            portalId: fallbackPortalId,
+          });
+
+          // eslint-disable-next-line no-console
+          console.warn(
+            "[MinigamePortal] Bootstrap failed; continuing with fallback context.",
+            {
+              error: e instanceof Error ? e.message : String(e),
+              portalId: fallbackPortalId || "(none)",
+            },
+          );
+
+          const fallbackCtx: BootstrapContext = {
+            id: decoded.farmId ?? fallbackPlayerData.resolvedProfile.farmId ?? 0,
+            jwt: fallbackJwt,
+            portalId: fallbackPortalId,
+            farm: {
+              balance: fallbackPlayerData.resolvedProfile.balance ?? "0",
+              username: fallbackPlayerData.resolvedProfile.username,
+              bumpkin: fallbackPlayerData.resolvedProfile.bumpkin,
+            },
+            playerEconomy: cfg.offlineMinigame?.() ?? emptySessionMinigame(),
+            actions: cfg.offlineActions,
+            economyMeta: cfg.offlineEconomyMeta,
+            playerData: fallbackPlayerData,
+          };
+
+          setBootstrap(fallbackCtx);
+          setErrorMessage(null);
+          setPhase("ready");
         }
       }
     })();

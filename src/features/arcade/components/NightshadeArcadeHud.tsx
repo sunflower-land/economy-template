@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from "react";
 import { HudContainer } from "components/ui/HudContainer";
-import { requestClosePortal } from "lib/portal/closePortal";
 import { useMinigameSession } from "lib/portal";
 import { Modal } from "components/ui/Modal";
 import { Panel } from "components/ui/Panel";
@@ -8,9 +7,6 @@ import ravenCoinIcon from "../assets/RavenCoin.webp";
 import coinsIcon from "../assets/coins.webp";
 import gemsIcon from "../assets/gem.webp";
 import flowerIcon from "../assets/flower_token.webp";
-import { PIXEL_SCALE } from "lib/constants";
-import { SUNNYSIDE } from "example-assets/sunnyside";
-import worldIcon from "example-assets/icons/world.png";
 import { PortalBasketButton } from "./PortalBasketButton";
 
 type NightshadeArcadeHudProps = {
@@ -67,7 +63,7 @@ const NightshadeArcadeBalances: React.FC<{
 export const NightshadeArcadeHud: React.FC<NightshadeArcadeHudProps> = ({
   extraRavenCoins,
 }) => {
-  const { playerEconomy, farm, playerData } = useMinigameSession();
+  const { farmId, playerEconomy, farm, playerData } = useMinigameSession();
   const profileInventory = playerData.resolvedProfile.inventory;
 
   const readOptionalAmount = (value: unknown) => {
@@ -124,47 +120,11 @@ export const NightshadeArcadeHud: React.FC<NightshadeArcadeHudProps> = ({
   return (
     <>
       <HudContainer>
-        <div className="absolute bottom-0 p-2.5 left-0 flex flex-col space-y-2.5">
-          <div
-            id="travel"
-            className="flex relative z-50 justify-center cursor-pointer hover:img-highlight group"
-            style={{
-              width: `${PIXEL_SCALE * 22}px`,
-              height: `${PIXEL_SCALE * 23}px`,
-            }}
-            onClick={(event) => {
-              event.stopPropagation();
-              event.preventDefault();
-              requestClosePortal();
-            }}
-          >
-            <img
-              alt=""
-              src={SUNNYSIDE.ui.round_button_pressed}
-              className="absolute"
-              style={{
-                width: `${PIXEL_SCALE * 22}px`,
-              }}
-            />
-            <img
-              alt=""
-              src={SUNNYSIDE.ui.round_button}
-              className="absolute group-active:translate-y-[2px]"
-              style={{
-                width: `${PIXEL_SCALE * 22}px`,
-              }}
-            />
-            <img
-              alt=""
-              src={worldIcon}
-              className="absolute group-active:translate-y-[2px]"
-              style={{
-                width: `${PIXEL_SCALE * 12}px`,
-                left: `${PIXEL_SCALE * 5}px`,
-                top: `${PIXEL_SCALE * 4}px`,
-              }}
-            />
+        <div className="absolute left-3 top-3 rounded bg-black/55 px-3 py-2 text-xs text-white">
+          <div className="font-semibold">
+            {playerData.resolvedProfile.username ?? `Farmer #${farmId}`}
           </div>
+          <div className="text-[11px] text-[#e6bfd4]">Nightshade Arcade</div>
         </div>
 
         <div className="absolute right-0 top-0 p-2.5">

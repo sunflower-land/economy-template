@@ -32,10 +32,11 @@ export enum ANIMATION {
 
 export const getAnimationUrl = (
   bumpkinParts: BumpkinParts,
-  animation: keyof typeof ANIMATION,
+  animations: keyof typeof ANIMATION | (keyof typeof ANIMATION)[],
 ) => {
   const base = getAnimationApiBase();
-  return `${base}/animate/0_v1_${tokenUriBuilder(bumpkinParts)}/${animation}`;
+  const encoded = Array.isArray(animations) ? animations.join("_") : animations;
+  return `${base}/animate/0_v1_${tokenUriBuilder(bumpkinParts)}/${encoded}`;
 };
 
 /** Farm / world NPC style (animated WebP), e.g. `["idle-small"]`. */
